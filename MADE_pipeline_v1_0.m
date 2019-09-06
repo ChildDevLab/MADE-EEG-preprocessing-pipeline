@@ -29,15 +29,15 @@
 % Please cite the following references for in any manuscripts produced utilizing MADE pipeline:
 
 % EEGLAB: A Delorme & S Makeig (2004) EEGLAB: an open source toolbox for
-% analysis of single-trial EEG dynamics. Journal of Neuroscience Methods, 134, 9–21.
+% analysis of single-trial EEG dynamics. Journal of Neuroscience Methods, 134, 9â€“21.
 
 % firfilt (filter plugin): developed by Andreas Widmann (https://home.uni-leipzig.de/biocog/content/de/mitarbeiter/widmann/eeglab-plugins/)
 
 % FASTER: Nolan, H., Whelan, R., Reilly, R.B., 2010. FASTER: Fully Automated Statistical
-% Thresholding for EEG artifact Rejection. Journal of Neuroscience Methods, 192, 152–162.
+% Thresholding for EEG artifact Rejection. Journal of Neuroscience Methods, 192, 152â€“162.
 
 % ADJUST: Mognon, A., Jovicich, J., Bruzzone, L., Buiatti, M., 2011. ADJUST: An automatic EEG
-% artifact detector based on the joint use of spatial and temporal features. Psychophysiology, 48, 229–240.
+% artifact detector based on the joint use of spatial and temporal features. Psychophysiology, 48, 229â€“240.
 % Our group has modified ADJUST plugin to improve selection of ICA components containing artifacts
 
 % Copyright (C) 2019 Ranjan Debnath, George A. Buzzell, Santiago Morales, Maureen E. Bowers, Nathan A. Fox
@@ -113,7 +113,7 @@ baseline_window = []; % baseline period in milliseconds (MS) [] = entire epoch
 
 % 11. Do you want to remove artifact laden epoch based on voltage threshold?
 voltthres_rejection = 1; % 0 = NO, 1 = YES
-volt_threshold = [-100 100]; % lower and upper threshold (in µV)
+volt_threshold = [-100 100]; % lower and upper threshold (in ÂµV)
 
 % 12. Do you want to perform epoch level channel interpolation for artifact laden epoch? (see manuscript for detail)
 interp_epoch = 1; % 0 = NO, 1 = YES.
@@ -625,7 +625,6 @@ for subject=1:length(datafile_names)
         end
     end
     
-    create_eyes_open_closed_resting_epoch;
     total_epochs_before_artifact_rejection(subject)=EEG.trials;
     
     %% STEP 13: Remove baseline
