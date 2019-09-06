@@ -637,8 +637,12 @@ for subject=1:length(datafile_names)
     all_bad_epochs=0;
     if voltthres_rejection==1 % check voltage threshold rejection
         if interp_epoch==1 % check epoch level channel interpolation
-            chans=[]; chansidx=[];
-            [chans,chansidx] = ismember(frontal_channels, chans_labels); % get indices of frontal channels
+            chans=[]; chansidx=[];chans_labels2=[];
+            chans_labels2=cell(1,EEG.nbchan);
+            for i=1:EEG.nbchan
+                chans_labels2{i}= EEG.chanlocs(i).labels;
+            end
+            [chans,chansidx] = ismember(frontal_channels, chans_labels2);
             frontal_channels_idx = chansidx(chansidx ~= 0);
             badChans = zeros(EEG.nbchan, EEG.trials);
             badepoch=zeros(1, EEG.trials);
