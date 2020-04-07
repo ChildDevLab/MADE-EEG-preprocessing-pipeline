@@ -76,6 +76,8 @@ down_sample = 0; % 0 = NO (no down sampling), 1 = YES (down sampling)
 sampling_rate = xxx; % set sampling rate (in Hz), if you want to down sample
 
 % 6. Do you want to delete the outer layer of the channels? (Rationale has been described in MADE manuscript)
+%    This fnction can also be used to down sample electrodes. For example, if EEG was recorded with 128 channels but you would
+%    like to analyse only 64 channels, you can assign the list of channnels to be excluded in the 'outerlayer_channel' variable.    
 delete_outerlayer = 0; % 0 = NO (do not delete outer layer), 1 = YES (delete outerlayer);
 % If you want to delete outer layer, make a list of channels to be deleted
 outerlayer_channel = {'list of channels'}; % list of channels
@@ -128,7 +130,7 @@ output_format = xx; % 1 = .set (EEGLAB data structure), 2 = .mat (Matlab data st
 
 %% Read files to analyses
 datafile_names=dir(rawdata_location);
-datafile_names=datafile_names(~ismember({datafile_names.name},{'.','..'}));
+datafile_names=datafile_names(~ismember({datafile_names.name},{'.', '..', '.DS_Store'}));
 datafile_names={datafile_names.name};
 [filepath,name,ext] = fileparts(char(datafile_names{1}));
 
