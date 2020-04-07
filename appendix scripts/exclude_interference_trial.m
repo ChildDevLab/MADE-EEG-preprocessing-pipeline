@@ -30,10 +30,10 @@
 
 %% Read excel file containing trial numbers to be excluded from analysis because of interference during experiment
 if subject ==1 % read the file once
-    interference_trialfile_location = 'D:\Mirror_Neuron_Kat_Data\Analysis after removing interfere trials\scripts\'; % location of the file
+    interference_trialfile_location = ''; % location of the file
     interference_trialfile_name = 'interference coding.xlsx'; % excel file name
     interference_trialfile_sheet = 'Sheet1'; % excel sheet to read data from
-    interference_trialfile_rwcl = 'A2:C47'; % row and column numbers. starts from A2 to exclude header
+    interference_trialfile_rwcl = 'A2:C10'; % row and column numbers. starts from A2 to exclude header
     interference_trialfile_header = {'subjectID', 'Condition1', 'Condition2'}; % headers
     
     % Import the data
