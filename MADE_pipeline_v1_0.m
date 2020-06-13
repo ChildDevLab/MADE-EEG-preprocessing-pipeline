@@ -4,7 +4,7 @@
 % Developed at the Child Development Lab, University of Maryland, College Park
 
 % Contributors to MADE pipeline:
-% Ranjan Debnath (rdebnatah@umd.edu)
+% Ranjan Debnath (rdebnath@umd.edu)
 % George A. Buzzell (gbuzzell@umd.edu)
 % Santiago Morales Pamplona (moraless@umd.edu)
 % Stephanie Leach (sleach12@umd.edu)
