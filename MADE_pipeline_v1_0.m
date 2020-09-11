@@ -115,7 +115,7 @@ interp_channels = 0; % 0 = NO (Do not interpolate), 1 = YES (interpolate missing
 rerefer_data = 0; % 0 = NO, 1 = YES
 reref=[]; % Enter electrode name/s or number/s to be used for rereferencing
 % For channel name/s enter, reref = {'channel_name', 'channel_name'};
-% For channel name/s enter, reref = [channel_number, channel_number];
+% For channel number/s enter, reref = [channel_number, channel_number];
 % For average rereference enter, reref = []; default is average rereference
 
 % 15. Do you want to save interim results?
