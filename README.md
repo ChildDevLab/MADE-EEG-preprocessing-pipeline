@@ -1,16 +1,16 @@
 # MADE-EEG-preprocessing-pipeline
-The Maryland Analysis of Developmental EEG (UMADE) Pipeline. Version 1.0.
+The Maryland Analysis of Developmental EEG (MADE) Pipeline. Version 1.0.
 Developed at the Child Development Lab, University of Maryland, College Park.
 
 Authors:
-Ranjan Debnath (rdebnatah@umd.edu)
-George A. Buzzell (gbuzzell@umd.edu)
+Ranjan Debnath (ranjan.ju@gmail.com)
+George A. Buzzell (georgebuzzell@gmail.com)
 Santiago Morales  (moraless@umd.edu)
 Stephanie Leach (sleach12@umd.edu)
 Maureen E. Bowers (mbowers1@umd.edu)
 Nathan A. Fox (fox@umd.edu)
 
-See MADE manuscripts for deatil theoretical explanations of the processing stepts.
+See MADE manuscripts for detailed theoretical explanations of the processing steps.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License 
 as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
