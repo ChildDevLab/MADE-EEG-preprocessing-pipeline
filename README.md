@@ -10,7 +10,8 @@ Stephanie Leach (sleach12@umd.edu)
 Maureen E. Bowers (mbowers1@umd.edu)
 Nathan A. Fox (fox@umd.edu)
 
-See MADE manuscripts for detailed theoretical explanations of the processing steps.
+See the MADE manuscript (https://doi.org/10.1111/psyp.13580) for detailed theoretical explanations of the processing steps. 
+A supplementary tutorial can be found under the Supporting Information tab at the bottom of the online manuscript.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License 
 as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
