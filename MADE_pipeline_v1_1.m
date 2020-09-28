@@ -212,12 +212,12 @@ if output_format < 3 % if not BIDS format
     end
 elseif output_format == 3 % if BIDS format
     % check if derivatives folder already exists and create it if not (where we will save preprocessed data)
-    if exist([ output_location filesep 'derivatives' filesep current_subject]) == 0
-        mkdir([ output_location filesep 'derivatives' filesep current_subject])
+    if exist([ output_location filesep 'derivatives']) == 0
+        mkdir([ output_location filesep 'derivatives'])
     end
     % check if eegpreprocess folder already exists and create it if not (where we will save preprocessed data)
-    if exist([ output_location filesep 'derivatives' filesep 'eegpreprocess' filesep current_subject]) == 0
-        mkdir([ output_location filesep 'derivatives' filesep 'eegpreprocess' filesep current_subject])
+    if exist([ output_location filesep 'derivatives' filesep 'eegpreprocess']) == 0
+        mkdir([ output_location filesep 'derivatives' filesep 'eegpreprocess'])
     end
     % create file path for derivatives folder
     output_location_derivatives = [output_location filesep 'derivatives'];
@@ -239,19 +239,6 @@ eeglab
 for subject=1:length(datafile_names)
     EEG=[];
     
-    % if BIDS output format requested
-    if output_format == 3
-        current_subject = ['sub-' datafile_names{subject}(subject_number_loc(1):subject_number_loc(2))];
-        % create folder to save BIDS formatted raw data (no preprocessing)
-        if exist([ output_location filesep current_subject]) == 0
-            mkdir([ output_location filesep current_subject])
-        end
-        % create subject folder within derivatives folder for preprocessed data
-        if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
-            mkdir([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject])
-        end
-    end
-    
     fprintf('\n\n\n*** Processing subject %d (%s) ***\n\n\n', subject, datafile_names{subject});
     
     %% STEP 1: Import EGI data file and relevant information
@@ -264,6 +251,23 @@ for subject=1:length(datafile_names)
 %     EEG = pop_biosig([rawdata_location, filesep, datafile_names{subject}]);
 %     EEG = eeg_checkset(EEG);
 %     EEG = pop_select( EEG,'nochannel', 65:72); % delete redundant channels
+    
+    % if BIDS output format requested
+    if output_format == 3
+        current_subject = ['sub-' datafile_names{subject}(subject_number_loc(1):subject_number_loc(2))];
+        % create folder to save BIDS formatted raw data (no preprocessing)
+        if exist([ output_location filesep current_subject]) == 0
+            mkdir([ output_location filesep current_subject])
+        end
+        % save raw data in BIDS format
+        EEG = eeg_checkset(EEG);
+        EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg']);
+        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg'],'filepath', [output_location filesep current_subject]); % save BIDS format
+        % create subject folder within derivatives folder for preprocessed data
+        if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
+            mkdir([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject])
+        end
+    end
     
     %% STEP 2: Import channel locations
     EEG=pop_chanedit(EEG, 'load',{channel_locations 'filetype' 'autodetect'});
