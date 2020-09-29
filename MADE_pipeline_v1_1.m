@@ -77,7 +77,7 @@ clc % clear matlab command window
 
 % Do you want to use miniMADE (recommended for low density (<32 channels) systems)
 run_miniMADE = 0; % 0 = NO (run full MADE pipeline),  = YES (run MADE pipeline with minimal preprocessing steps)
-% Note: Running miniMADE will skip the FASTER and ICA steps. Interpolation can still be performed, but is not recommended
+% Note: Running miniMADE will skip the FASTER and ICA steps. Epoch level interpolation can still be performed, but is not recommended
 % miniMADE also skips interim saving
 
 % 1. Enter the path of the folder that has the raw data to be analyzed
@@ -151,7 +151,7 @@ reref=[]; % Enter electrode name/s or number/s to be used for rereferencing
 save_interim_result = 0; % 0 = NO (Do not save) 1 = YES (save interim results)
 
 % 16. How do you want to save your data? .set or .mat
-output_format = xx; % 1 = .set (EEGLAB data structure), 2 = .mat (Matlab data structure)
+output_format = xx; % 1 = .set (EEGLAB data structure), 2 = .mat (Matlab data structure), 3 = BIDS format
 % If you chose BIDS format, specify subject number location in the file name and the task name
 subject_number_loc = [xx xx]; % should enter as [start stop] locations (e.g., par001_eeg.mff would be entered as [4 6])
 task_name = 'task_name'; % should enter the eeg task name you want included in the file name
