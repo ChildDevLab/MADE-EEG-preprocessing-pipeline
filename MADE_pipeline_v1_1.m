@@ -806,8 +806,11 @@ for subject=1:length(datafile_names)
                         [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
                         badChanNum = unique([badChanNum; unique(jump_chans)]);
                         % interpolate using bad channel list with extra checks
-                        EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
-                        tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
+                        if length(badChanNum) < EEGe.nbchan - 1% script will crash if we try to interpolate with 0 or 1 channels left 
+                            EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
+                            tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
+                        end
+                        badChans2(badChanNum,e) = 1; % modify
                         % keep track of flat and jump channel information
                         %flat_mat(e) = ~isempty(flatChanNum);
                         %jump_mat(e) = length(unique(jump_chans));
@@ -818,7 +821,7 @@ for subject=1:length(datafile_names)
                 % If more than 10% of channels in an epoch were interpolated, reject that epoch
                 badepoch=zeros(1, EEG.trials);
                 for ei=1:EEG.trials
-                    NumbadChan = badChans(:,ei); % find how many channels are bad in an epoch
+                    NumbadChan = badChans2(:,ei); % find how many channels are bad in an epoch
                     if sum(NumbadChan) > round((10/100)*EEG.nbchan)% check if more than 10% are bad
                         badepoch (ei)= sum(NumbadChan);
                     end
