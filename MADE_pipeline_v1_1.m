@@ -800,10 +800,10 @@ for subject=1:length(datafile_names)
                         EEGe = pop_selectevent( EEG, 'epoch',e,'deleteevents','off','deleteepochs','on','invertepochs','off');
                         badChanNum = find(badChans(:,e)==1); %find which channels are bad for this epoch
                         % find and add flat chans to the bad chans list
-                        flatChanNum = find(range(EEGe.data(chan_to_check,:),2) < 1);
+                        flatChanNum = find(range(EEGe.data,2) < 1);
                         badChanNum  = unique([badChanNum; flatChanNum]);
                         % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
-                        [jump_chans, ~] = find( abs(diff(EEGe.data(chan_to_check,:),1,2) ./ repmat(diff(1:500),length(chan_to_check),1)) > 50);
+                        [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
                         badChanNum = unique([badChanNum; unique(jump_chans)]);
                         % interpolate using bad channel list with extra checks
                         EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
