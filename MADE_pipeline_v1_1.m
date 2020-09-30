@@ -630,11 +630,15 @@ for subject=1:length(datafile_names)
         EEG_copy = EEG;
         EEG_copy =eeg_regepochs(EEG_copy,'recurrence', 1, 'limits',[0 1], 'rmbase', [NaN], 'eventtype', '999'); % insert temporary marker 1 second apart and create epochs
         EEG_copy = eeg_checkset(EEG_copy);
-
-        if save_interim_result==1 && output_format ~= 3
-            badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
-        else % if save_interim_result==0 AND/OR output_format == 3
-            badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+        
+        if output_format == 3 % if BIDS format
+            badICs = adjusted_ADJUST(EEG_copy, [output_location filesep current_subject '_adjust_report']); % save in raw data folder
+        else % if not BIDS format
+            if save_interim_result==1
+                badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+            else
+                badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+            end
         end
         close all;
 
