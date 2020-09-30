@@ -125,7 +125,7 @@ dummy_events ={'xxx'}; % enter dummy events name
 
 % 10. Do you want to remove/correct baseline?
 remove_baseline = 0; % 0 = NO (no baseline correction), 1 = YES (baseline correction)
-baseline_window = [xx  xx]; % baseline period in milliseconds (MS), [0 rest_epoch_length*1000] = entire epoch OR [task_epoch_length(1)*1000 task_epoch_length(2)*1000] = entire epoch
+baseline_window = [xx  xx]; % baseline period in milliseconds (MS), [] = entire epoch
 
 % 11. Do you want to remove artifact laden epoch based on voltage threshold?
 voltthres_rejection = 0; % 0 = NO, 1 = YES
@@ -719,6 +719,9 @@ for subject=1:length(datafile_names)
     
     %% STEP 13: Remove baseline
     if remove_baseline==1
+        if isempty(baseline_window) % set up for entire epoch
+            baseline_window = [EEG.times(1) EEG.times(end)]; % set start and stop times for the baseline window
+        end
         EEG = eeg_checkset( EEG );
         EEG = pop_rmbase( EEG, baseline_window);
     end
@@ -867,11 +870,11 @@ for subject=1:length(datafile_names)
     end
     
     %% STEP 15: Interpolate deleted channels
-    if interp_channels==1
-        EEG = eeg_interp(EEG, channels_analysed);
-        EEG = eeg_checkset(EEG);
-    end
     if run_miniMADE == 0
+        if interp_channels==1
+            EEG = eeg_interp(EEG, channels_analysed);
+            EEG = eeg_checkset(EEG);
+        end
         if numel(FASTbadChans)==0 && numel(ica_prep_badChans)==0
             total_channels_interpolated(subject)=0;
         else
