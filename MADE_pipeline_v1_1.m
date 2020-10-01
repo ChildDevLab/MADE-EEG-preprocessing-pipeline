@@ -472,7 +472,9 @@ for subject=1:length(datafile_names)
             elseif output_format==2
                 save([[output_location filesep 'filtered_data' filesep ] strrep(datafile_names{subject}, ext, '_filtered_data.mat')], 'EEG'); % save .mat format
             elseif output_format==3
-                % no interim saving for BIDS format
+                EEG = eeg_checkset(EEG);
+                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_filtered_data']);
+                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_filtered_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
             end
         end
     
@@ -663,7 +665,9 @@ for subject=1:length(datafile_names)
             elseif output_format==2
                 save([[output_location filesep 'ica_data' filesep ] strrep(datafile_names{subject}, ext, '_ica_data.mat')], 'EEG'); % save .mat format
             elseif output_format==3
-                % no interim saving for BIDS format
+                EEG = eeg_checkset(EEG);
+                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_ica_data']);
+                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_ica_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
             end
         end
     
@@ -810,7 +814,7 @@ for subject=1:length(datafile_names)
                             EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
                             tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
                         end
-                        badChans2(badChanNum,e) = 1; % modify
+                        badChans(badChanNum,e) = 1; % modify
                         % keep track of flat and jump channel information
                         %flat_mat(e) = ~isempty(flatChanNum);
                         %jump_mat(e) = length(unique(jump_chans));
@@ -821,7 +825,7 @@ for subject=1:length(datafile_names)
                 % If more than 10% of channels in an epoch were interpolated, reject that epoch
                 badepoch=zeros(1, EEG.trials);
                 for ei=1:EEG.trials
-                    NumbadChan = badChans2(:,ei); % find how many channels are bad in an epoch
+                    NumbadChan = badChans(:,ei); % find how many channels are bad in an epoch
                     if sum(NumbadChan) > round((10/100)*EEG.nbchan)% check if more than 10% are bad
                         badepoch (ei)= sum(NumbadChan);
                     end
