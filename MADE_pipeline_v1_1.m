@@ -557,7 +557,21 @@ for subject=1:length(datafile_names)
                 EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_no_usable_data_all_bad_channels']);
                 EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_no_usable_data_all_bad_channels.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
             end
-
+        % If > 20%, but not all of the channels are bad, save the dataset at this stage and ignore the remaining of the preprocessing.
+        elseif numel(ica_prep_badChans) > 0.2*EEG.nbchan
+            all_bad_channels=1;
+            warning(['No usable data for datafile', datafile_names{subject}]);
+            if output_format==1
+                EEG = eeg_checkset(EEG);
+                EEG = pop_editset(EEG, 'setname',  strrep(datafile_names{subject}, ext, '_no_usable_data_too_many_bad_channels'));
+                EEG = pop_saveset(EEG, 'filename', strrep(datafile_names{subject}, ext, '_no_usable_data_too_many_bad_channels.set'),'filepath', [output_location filesep 'processed_data' filesep ]); % save .set format
+            elseif output_format==2
+                save([[output_location filesep 'processed_data' filesep ] strrep(datafile_names{subject}, ext, '_no_usable_data_too_many_bad_channels.mat')], 'EEG'); % save .mat format
+            elseif output_format==3
+                EEG = eeg_checkset(EEG);
+                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_no_usable_data_too_many_bad_channels']);
+                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_no_usable_data_too_many_bad_channels.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
+            end
         else
             % Reject bad channel - channel with more than xx% artifacted epochs
             EEG_copy = pop_select( EEG_copy,'nochannel', ica_prep_badChans);
