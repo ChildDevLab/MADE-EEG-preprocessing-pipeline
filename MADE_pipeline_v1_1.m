@@ -78,7 +78,7 @@ clc % clear matlab command window
 % Do you want to use miniMADE (recommended for low density (<32 channels) systems)
 run_miniMADE = 0; % 0 = NO (run full MADE pipeline),  = YES (run MADE pipeline with minimal preprocessing steps)
 % Note: Running miniMADE will skip the FASTER and ICA steps. Epoch level interpolation can still be performed, but is not recommended
-% miniMADE also skips interim saving
+% miniMADE also skips interim saving regardless of user selection
 
 % 1. Enter the path of the folder that has the raw data to be analyzed
 rawdata_location = '....';
@@ -156,6 +156,15 @@ output_format = xx; % 1 = .set (EEGLAB data structure), 2 = .mat (Matlab data st
 subject_number_loc = [xx xx]; % should enter as [start stop] locations (e.g., par001_eeg.mff would be entered as [4 6])
 task_name = 'task_name'; % should enter the eeg task name you want included in the file name
 
+% ---------------- ADVANCED OPTIONS ---------------- %
+% 17. Do you want to allow missing channels in epochs?
+% Note: matlab matrices do not allow for missing rows (channels for data matrix). As such, channels removed from epochs will be replaced with
+%       NaNs, which will need to be removed when averaging epochs (in the case of ERPs) or calculating other metrics (e.g., spectral power)
+allow_missing_chans = 0; % this will replace bad channels with NaNs, 0 = NO and 1 = YES
+% If allow_missing_chans = 1 (YES), volt_threshold values will be used to determine which channels are bad and will be replaced with NaN
+% If allow_missing_chans = 1 (YES), interp_epoch & interp_channels CANNOT also = 1 (YES)
+% If allow_missing_chans = 1 (YES), an average rereference cannot be used (reref cannot = [])
+
 % ********* no need to edit beyond this point for EGI .mff data **********
 % ********* for non-.mff data format edit data import function ***********
 % ********* below using relevant data import plugin from EEGLAB **********
@@ -195,6 +204,21 @@ end
 if exist('ADJUST', 'file')==0
     error(['Please make sure you download modified "ADJUST" plugin from GitHub (link is in MADE manuscript)' ...
         ' and ADJUST is in EEGLAB plugin folder and on Matlab path.']);
+end
+
+%% Check that ADVANCED pipeline selections are compatible with other preprocessing selections
+if allow_missing_chans == 1 && (interp_epoch == 1 || interp_channels == 1)
+    error(['The allow_missing_chans option (ADVANCED) cannot be turned on if channel interpolation is on...' ...
+        ' allow_missing_chans does not allow for channel interpolation. Please make sure interp_epoch and interp_channels are off']);
+end
+
+if allow_missing_chans == 1 && isempty(reref)
+    error(['An average rereference cannot be used if the allow_missing_chans option (ADVANCED) is on...' ...
+        ' allow_missing_chans does not allow for average reference. Please ensure only a subset of channels are used for rereferencing']);
+end
+
+if allow_missing_chans == 1 && voltthres_rejection == 0
+    warning('voltage threshold rejection thresholds will still be used to select bad channels and replace them with NaNs');
 end
 
 %% Create output folders to save data
@@ -746,74 +770,131 @@ for subject=1:length(datafile_names)
     
     %% STEP 14: Artifact rejection
     all_bad_epochs=0;
-    if voltthres_rejection==1 % check voltage threshold rejection
-        if interp_epoch==1 % check epoch level channel interpolation
-            % first pass: loop through frontal channels and reject bad epochs
-            %   - removes epochs with (possible) blinks
-            %   - same steps for MADE and miniMADE (if miniMADE uses interpolation)
-            chans=[]; chansidx=[];chans_labels2=[];
-            chans_labels2=cell(1,EEG.nbchan);
-            for i=1:EEG.nbchan
-                chans_labels2{i}= EEG.chanlocs(i).labels;
-            end
-            [chans,chansidx] = ismember(frontal_channels, chans_labels2);
-            frontal_channels_idx = chansidx(chansidx ~= 0);
-            badChans = zeros(EEG.nbchan, EEG.trials);
-            badepoch=zeros(1, EEG.trials);
-            if isempty(frontal_channels_idx)==1 % check whether there is any frontal channel in dataset to check
-                warning('No frontal channels from the list present in the data. Only epoch interpolation will be performed.');
-            else
-                % find artifaceted epochs by detecting outlier voltage in the specified channels list and remove epoch if artifacted in those channels
-                for ch =1:length(frontal_channels_idx)
-                    EEG = pop_eegthresh(EEG,1, frontal_channels_idx(ch), volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
-                    EEG = eeg_checkset( EEG );
-                    EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
-                    badChans(ch,:) = EEG.reject.rejglobal;
+    if allow_missing_chans == 0 
+        if voltthres_rejection==1 % check voltage threshold rejection
+            if interp_epoch==1 % check epoch level channel interpolation
+                % first pass: loop through frontal channels and reject bad epochs
+                %   - removes epochs with (possible) blinks
+                %   - same steps for MADE and miniMADE (if miniMADE uses interpolation)
+                chans=[]; chansidx=[];chans_labels2=[];
+                chans_labels2=cell(1,EEG.nbchan);
+                for i=1:EEG.nbchan
+                    chans_labels2{i}= EEG.chanlocs(i).labels;
                 end
-                for ii=1:size(badChans, 2)
-                    badepoch(ii)=sum(badChans(:,ii));
-                end
-                badepoch=logical(badepoch);
-            end
-            
-            % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
-            if sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
-                all_bad_epochs=1;
-                warning(['No usable data for datafile', datafile_names{subject}]);
-            else
-                EEG = pop_rejepoch( EEG, badepoch, 0);
-                EEG = eeg_checkset(EEG);
-            end
-            
-            % second pass: loop through all channels and interpolate remaining bad channels at the epoch level
-            %   - miniMADE has extra artifact checks at this step
-            if all_bad_epochs==1
-                warning(['No usable data for datafile', datafile_names{subject}]);
-            else
-                % Interpolate artifacted data for all reaming channels
+                [chans,chansidx] = ismember(frontal_channels, chans_labels2);
+                frontal_channels_idx = chansidx(chansidx ~= 0);
                 badChans = zeros(EEG.nbchan, EEG.trials);
-                % Find artifacted epochs by detecting outlier voltage but don't remove
-                for ch=1:EEG.nbchan
-                    EEG = pop_eegthresh(EEG,1, ch, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
-                    EEG = eeg_checkset(EEG);
-                    EEG = eeg_rejsuperpose(EEG, 1, 1, 1, 1, 1, 1, 1, 1);
-                    badChans(ch,:) = EEG.reject.rejglobal;
-                end
-                tmpData = zeros(EEG.nbchan, EEG.pnts, EEG.trials);
-                if run_miniMADE == 0
-                    for e = 1:EEG.trials
-                        % Initialize variables EEGe and EEGe_interp;
-                        EEGe = []; EEGe_interp = []; badChanNum = [];
-                        % Select only this epoch (e)
-                        EEGe = pop_selectevent( EEG, 'epoch', e, 'deleteevents', 'off', 'deleteepochs', 'on', 'invertepochs', 'off');
-                        badChanNum = find(badChans(:,e)==1); % find which channels are bad for this epoch
-                        EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
-                        tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
+                badepoch=zeros(1, EEG.trials);
+                if isempty(frontal_channels_idx)==1 % check whether there is any frontal channel in dataset to check
+                    warning('No frontal channels from the list present in the data. Only epoch interpolation will be performed.');
+                else
+                    % find artifaceted epochs by detecting outlier voltage in the specified channels list and remove epoch if artifacted in those channels
+                    for ch =1:length(frontal_channels_idx)
+                        EEG = pop_eegthresh(EEG,1, frontal_channels_idx(ch), volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
+                        EEG = eeg_checkset( EEG );
+                        EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+                        badChans(ch,:) = EEG.reject.rejglobal;
                     end
+                    for ii=1:size(badChans, 2)
+                        badepoch(ii)=sum(badChans(:,ii));
+                    end
+                    badepoch=logical(badepoch);
+                end
+
+                % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
+                if sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
+                    all_bad_epochs=1;
+                    warning(['No usable data for datafile', datafile_names{subject}]);
+                else
+                    EEG = pop_rejepoch( EEG, badepoch, 0);
+                    EEG = eeg_checkset(EEG);
+                end
+
+                % second pass: loop through all channels and interpolate remaining bad channels at the epoch level
+                %   - miniMADE has extra artifact checks at this step
+                if all_bad_epochs==1
+                    warning(['No usable data for datafile', datafile_names{subject}]);
+                else
+                    % Interpolate artifacted data for all reaming channels
+                    badChans = zeros(EEG.nbchan, EEG.trials);
+                    % Find artifacted epochs by detecting outlier voltage but don't remove
+                    for ch=1:EEG.nbchan
+                        EEG = pop_eegthresh(EEG,1, ch, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
+                        EEG = eeg_checkset(EEG);
+                        EEG = eeg_rejsuperpose(EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+                        badChans(ch,:) = EEG.reject.rejglobal;
+                    end
+                    tmpData = zeros(EEG.nbchan, EEG.pnts, EEG.trials);
+                    if run_miniMADE == 0
+                        for e = 1:EEG.trials
+                            % Initialize variables EEGe and EEGe_interp;
+                            EEGe = []; EEGe_interp = []; badChanNum = [];
+                            % Select only this epoch (e)
+                            EEGe = pop_selectevent( EEG, 'epoch', e, 'deleteevents', 'off', 'deleteepochs', 'on', 'invertepochs', 'off');
+                            badChanNum = find(badChans(:,e)==1); % find which channels are bad for this epoch
+                            EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
+                            tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
+                        end
+                    elseif run_miniMADE == 1
+                        for e = 1:EEG.trials
+                            EEGe = []; EEGe_interp = []; badChanNum = []; % Initialize variables EEGe and EEGe_interp;
+                            %select only this epoch (e)
+                            EEGe = pop_selectevent( EEG, 'epoch',e,'deleteevents','off','deleteepochs','on','invertepochs','off');
+                            badChanNum = find(badChans(:,e)==1); %find which channels are bad for this epoch
+                            % find and add flat chans to the bad chans list
+                            flatChanNum = find(range(EEGe.data,2) < 1);
+                            badChanNum  = unique([badChanNum; flatChanNum]);
+                            % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
+                            [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
+                            badChanNum = unique([badChanNum; unique(jump_chans)]);
+                            % interpolate using bad channel list with extra checks
+                            if length(badChanNum) < EEGe.nbchan - 1% script will crash if we try to interpolate with 0 or 1 channels left 
+                                EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
+                                tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
+                            end
+                            badChans(badChanNum,e) = 1; % modify
+                            % keep track of flat and jump channel information
+                            %flat_mat(e) = ~isempty(flatChanNum);
+                            %jump_mat(e) = length(unique(jump_chans));
+                        end
+                    end
+                    EEG.data = tmpData; % now that all of the epochs have been interpolated, write the data back to the main file
+
+                    % If more than 10% of channels in an epoch were interpolated, reject that epoch
+                    badepoch=zeros(1, EEG.trials);
+                    for ei=1:EEG.trials
+                        NumbadChan = badChans(:,ei); % find how many channels are bad in an epoch
+                        if sum(NumbadChan) > round((10/100)*EEG.nbchan)% check if more than 10% are bad
+                            badepoch (ei)= sum(NumbadChan);
+                        end
+                    end
+                    badepoch=logical(badepoch);
+                end
+                % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
+                if sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
+                    all_bad_epochs=1;
+                    warning(['No usable data for datafile', datafile_names{subject}]);
+                else
+                    EEG = pop_rejepoch(EEG, badepoch, 0);
+                    EEG = eeg_checkset(EEG);
+                end
+            else % if no epoch level channel interpolation
+                if run_miniMADE == 0
+                    EEG = pop_eegthresh(EEG, 1, (1:EEG.nbchan), volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax, 0, 0);
+                    EEG = eeg_checkset(EEG);
+                    EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
                 elseif run_miniMADE == 1
+                    badChans = zeros(EEG.nbchan, EEG.trials);
+                    % Find artifacted epochs by detecting outlier voltage but don't remove
+                    for ch=1:EEG.nbchan
+                        EEG = pop_eegthresh(EEG,1, ch, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
+                        EEG = eeg_checkset(EEG);
+                        EEG = eeg_rejsuperpose(EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+                        badChans(ch,:) = EEG.reject.rejglobal;
+                    end
+                    tmpData = zeros(EEG.nbchan, EEG.pnts, EEG.trials);
                     for e = 1:EEG.trials
-                        % Initialize variables EEGe and EEGe_interp;
-                        EEGe = []; EEGe_interp = []; badChanNum = [];
+                        EEGe = []; badChanNum = []; % Initialize variables EEGe and badChanNum;
                         %select only this epoch (e)
                         EEGe = pop_selectevent( EEG, 'epoch',e,'deleteevents','off','deleteepochs','on','invertepochs','off');
                         badChanNum = find(badChans(:,e)==1); %find which channels are bad for this epoch
@@ -823,52 +904,100 @@ for subject=1:length(datafile_names)
                         % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
                         [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
                         badChanNum = unique([badChanNum; unique(jump_chans)]);
-                        % interpolate using bad channel list with extra checks
-                        if length(badChanNum) < EEGe.nbchan - 1% script will crash if we try to interpolate with 0 or 1 channels left 
-                            EEGe_interp = eeg_interp(EEGe,badChanNum); %interpolate the bad channels for this epoch
-                            tmpData(:,:,e) = EEGe_interp.data; % store interpolated data into matrix
-                        end
+                        % add any new bad channels back to the bad chan list
                         badChans(badChanNum,e) = 1; % modify
                         % keep track of flat and jump channel information
                         %flat_mat(e) = ~isempty(flatChanNum);
                         %jump_mat(e) = length(unique(jump_chans));
                     end
+                    badepoch=zeros(1, EEG.trials);
+                    for ei=1:EEG.trials
+                        if sum(badChans(:,ei)) > 0 % check if there are any bad chans
+                            badepoch (ei)= 1;
+                        end
+                    end
+                    badepoch=logical(badepoch);
                 end
-                EEG.data = tmpData; % now that all of the epochs have been interpolated, write the data back to the main file
-                
-                % If more than 10% of channels in an epoch were interpolated, reject that epoch
-                badepoch=zeros(1, EEG.trials);
-                for ei=1:EEG.trials
-                    NumbadChan = badChans(:,ei); % find how many channels are bad in an epoch
-                    if sum(NumbadChan) > round((10/100)*EEG.nbchan)% check if more than 10% are bad
-                        badepoch (ei)= sum(NumbadChan);
+                % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
+                if sum(EEG.reject.rejthresh)==EEG.trials || sum(EEG.reject.rejthresh)+1==EEG.trials
+                    all_bad_epochs=1;
+                    warning(['No usable data for datafile', datafile_names{subject}]);
+                else
+                    if run_miniMADE == 0
+                        EEG = pop_rejepoch(EEG,(EEG.reject.rejthresh), 0);
+                        EEG = eeg_checkset(EEG);
+                    elseif run_miniMADE == 1
+                        EEG = pop_rejepoch(EEG, badepoch, 0);
+                        EEG = eeg_checkset(EEG);
                     end
                 end
-                badepoch=logical(badepoch);
-            end
-            % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
-            if sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
-                all_bad_epochs=1;
-                warning(['No usable data for datafile', datafile_names{subject}]);
-            else
-                EEG = pop_rejepoch(EEG, badepoch, 0);
-                EEG = eeg_checkset(EEG);
-            end
-        else % if no epoch level channel interpolation
-            EEG = pop_eegthresh(EEG, 1, (1:EEG.nbchan), volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax, 0, 0);
-            EEG = eeg_checkset(EEG);
-            EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
-        end % end of epoch level channel interpolation if statement
+            end % end of epoch level channel interpolation if statement
+        end % end of voltage threshold rejection if statement
         
-        % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
-        if sum(EEG.reject.rejthresh)==EEG.trials || sum(EEG.reject.rejthresh)+1==EEG.trials
-            all_bad_epochs=1;
-            warning(['No usable data for datafile', datafile_names{subject}]);
-        else
-            EEG = pop_rejepoch(EEG,(EEG.reject.rejthresh), 0);
-            EEG = eeg_checkset(EEG);
+    elseif allow_missing_chans == 1 % If advanced option to replace bad channels with NaNs is selected
+        if rerefer_data==1
+            % grab channels for rereferencing
+            if iscell(reref)==1
+                reref_idx=zeros(1, length(reref));
+                for rr=1:length(reref)
+                    reref_idx(rr)=find(strcmp({EEG.chanlocs.labels}, reref{rr}));
+                end
+                reref_chans = reref_idx;
+            else
+                reref_chans = reref; 
+            end
+            % perform traditional artifact rejection for rereference channels
+            EEG = pop_eegthresh(EEG, 1, reref_chans, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax, 0, 0);
+            EEG = eeg_checkset( EEG );
+            EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+            
+            if length(find(EEG.reject.rejthresh)) == EEG.trials % if all epochs marked for rejection
+                all_bad_epochs = 1; % set at 1 so we don't save the file below
+            else
+                % reject epochs where rereference channels are bad
+                EEG = pop_rejepoch( EEG, (EEG.reject.rejthresh), 0);
+                EEG = eeg_checkset(EEG);
+                % re-reference to new reference channels
+                EEG = eeg_checkset(EEG);
+                EEG = pop_reref( EEG, reref_chans);
+            end
         end
-    end % end of voltage threshold rejection if statement
+        
+        if all_bad_epochs == 0
+            % replace remaining bad channels with NaNs
+            badChans = zeros(EEG.nbchan, EEG.trials);
+            % Find artifacted epochs by detecting outlier voltage but don't remove
+            for ch=1:EEG.nbchan
+                EEG = pop_eegthresh(EEG,1, ch, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax,0,0);
+                EEG = eeg_checkset(EEG);
+                EEG = eeg_rejsuperpose(EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+                badChans(ch,:) = EEG.reject.rejglobal;
+            end
+            tmpData = zeros(EEG.nbchan, EEG.pnts, EEG.trials);
+            for e = 1:EEG.trials
+                EEGe = []; badChanNum = []; % Initialize variables EEGe and EEGe_interp;
+                %select only this epoch (e)
+                EEGe = pop_selectevent( EEG, 'epoch',e,'deleteevents','off','deleteepochs','on','invertepochs','off');
+                badChanNum = find(badChans(:,e)==1); %find which channels are bad for this epoch
+                % find and add flat chans to the bad chans list
+                flatChanNum = find(range(EEGe.data,2) < 1);
+                badChanNum  = unique([badChanNum; flatChanNum]);
+                % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
+                [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
+                badChanNum = unique([badChanNum; unique(jump_chans)]);
+                % add any new bad channels back to the bad chan list
+                badChans(badChanNum,e) = 1; % modify badChan list
+                % remove the bad chans for this epoch (replace with NaN)
+                EEGe = eeg_checkset( EEGe );
+                EEGe.data(badChanNum,:) = NaN;
+                tmpData(:,:,e) = EEGe.data; % store NaN replaced data into matrix
+                % keep track of flat and jump channel information
+                %flat_mat(e) = ~isempty(flatChanNum);
+                %jump_mat(e) = length(unique(jump_chans));
+            end
+            EEG.data = tmpData;
+        end
+    end % end advanced option to use NaNs
     
     % if all epochs are found bad during artifact rejection
     if all_bad_epochs==1
@@ -892,7 +1021,7 @@ for subject=1:length(datafile_names)
     
     %% STEP 15: Interpolate deleted channels
     if run_miniMADE == 0
-        if interp_channels==1
+        if interp_channels==1 && allow_missing_chans == 0
             EEG = eeg_interp(EEG, channels_analysed);
             EEG = eeg_checkset(EEG);
         end
@@ -904,17 +1033,19 @@ for subject=1:length(datafile_names)
     end
     
     %% STEP 16: Rereference data
-    if rerefer_data==1
-        if iscell(reref)==1
-            reref_idx=zeros(1, length(reref));
-            for rr=1:length(reref)
-                reref_idx(rr)=find(strcmp({EEG.chanlocs.labels}, reref{rr}));
+    if allow_missing_chans == 0
+        if rerefer_data==1
+            if iscell(reref)==1
+                reref_idx=zeros(1, length(reref));
+                for rr=1:length(reref)
+                    reref_idx(rr)=find(strcmp({EEG.chanlocs.labels}, reref{rr}));
+                end
+                EEG = eeg_checkset(EEG);
+                EEG = pop_reref( EEG, reref_idx);
+            else
+                EEG = eeg_checkset(EEG);
+                EEG = pop_reref(EEG, reref);
             end
-            EEG = eeg_checkset(EEG);
-            EEG = pop_reref( EEG, reref_idx);
-        else
-            EEG = eeg_checkset(EEG);
-            EEG = pop_reref(EEG, reref);
         end
     end
     
@@ -934,6 +1065,7 @@ for subject=1:length(datafile_names)
 end % end of subject loop
 
 %% Create the report table for all the data files with relevant preprocessing outputs.
+cd(output_location)
 if run_miniMADE == 0
     report_table=table(datafile_names', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
         total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
