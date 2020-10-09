@@ -845,7 +845,7 @@ for subject=1:length(datafile_names)
                             flatChanNum = find(range(EEGe.data,2) < 1);
                             badChanNum  = unique([badChanNum; flatChanNum]);
                             % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
-                            [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
+                            [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:EEGe.pnts),EEGe.nbchan,1)) > 50);
                             badChanNum = unique([badChanNum; unique(jump_chans)]);
                             % interpolate using bad channel list with extra checks
                             if length(badChanNum) < EEGe.nbchan - 1% script will crash if we try to interpolate with 0 or 1 channels left 
@@ -902,7 +902,7 @@ for subject=1:length(datafile_names)
                         flatChanNum = find(range(EEGe.data,2) < 1);
                         badChanNum  = unique([badChanNum; flatChanNum]);
                         % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
-                        [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
+                        [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:EEGe.pnts),EEGe.nbchan,1)) > 50);
                         badChanNum = unique([badChanNum; unique(jump_chans)]);
                         % add any new bad channels back to the bad chan list
                         badChans(badChanNum,e) = 1; % modify
@@ -983,7 +983,7 @@ for subject=1:length(datafile_names)
                 flatChanNum = find(range(EEGe.data,2) < 1);
                 badChanNum  = unique([badChanNum; flatChanNum]);
                 % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
-                [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:500),EEGe.nbchan,1)) > 50);
+                [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:EEGe.pnts),EEGe.nbchan,1)) > 50);
                 badChanNum = unique([badChanNum; unique(jump_chans)]);
                 % add any new bad channels back to the bad chan list
                 badChans(badChanNum,e) = 1; % modify badChan list
