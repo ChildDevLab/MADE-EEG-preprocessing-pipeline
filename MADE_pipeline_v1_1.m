@@ -281,12 +281,18 @@ for subject=1:length(datafile_names)
         current_subject = ['sub-' datafile_names{subject}(subject_number_loc(1):subject_number_loc(2))];
         % create folder to save BIDS formatted raw data (no preprocessing)
         if exist([ output_location filesep current_subject]) == 0
-            mkdir([ output_location filesep current_subject])
+            mkdir([ output_location filesep current_subject]) % create subject folder
+            mkdir([ output_location filesep current_subject filesep 'eeg']) % create eeg folder in subject folder
         end
         % save raw data in BIDS format
         EEG = eeg_checkset(EEG);
         EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg']);
-        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg'],'filepath', [output_location filesep current_subject]); % save BIDS format
+        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg'],'filepath', [output_location filesep current_subject filesep 'eeg']); % save BIDS format
+        % save other variables in BIDS format
+        cd([output_location filesep current_subject])
+        events_to_tsv(EEG); % save event info
+        channelloc_to_tsv(EEG); % save EEG.chanlocs in .tsv format
+        electrodes_to_tsv(EEG); % save electrode info
         % create subject folder within derivatives folder for preprocessed data
         if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
             mkdir([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject])
