@@ -1095,7 +1095,11 @@ for subject=1:length(datafile_names)
 end % end of subject loop
 
 %% Create the report table for all the data files with relevant preprocessing outputs.
-cd(output_location)
+if output_format < 3
+    cd(output_location)
+else
+    cd(output_location_derivatives)
+end
 if run_miniMADE == 0
     report_table=table(datafile_names', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
         total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
