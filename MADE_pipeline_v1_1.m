@@ -15,17 +15,19 @@
 % Versions Log
 %
 % v1_1: Sept. 23, 2020 - modified by Stephanie C. Leach
-%       Fixed bugs arising from changes in EEGLab and Matlab functions
-%         * bug reported Sept. 23, 2020 by Sonya Troller-Renfree.
-%           pop_rmbase() no longer works with [] as the second argument.
-%           The baseline_window variable instructions have been updated to 
-%           reflect this
-%       Added option to run a version of MADE optimized for low-density EEG
-%       systemes (<32 channels)
-%         * skips the FASTER, ICA, and interpolation processing steps
-%         * modifies artifact rejection steps to include checks for flat
-%         channels and voltage jumps
-%       Added BIDS as a 3rd formatting option for saving data
+%       -Fixed bugs arising from changes in EEGLab and Matlab functions
+%           * bug reported Sept. 23, 2020 by Sonya Troller-Renfree.
+%             pop_rmbase() no longer works with [] as the second argument.
+%             The baseline removal code has been updated to change [] to 
+%             an accepted argument
+%       -Added a flat channel check to the ICA prep (cleaning) code
+%           * prevents ICA decompositions with less ICs than electrodes
+%       -Added option to run a version of MADE optimized for low-density EEG
+%       -systemes (<32 channels)
+%           * skips the FASTER, ICA, and interpolation processing steps
+%           * modifies artifact rejection steps to include checks for flat
+%             channels and voltage jumps
+%       -Added BIDS as a 3rd formatting option for saving data
 %         
 % ----------------------------------------------------------------------- %
 
@@ -570,6 +572,12 @@ for subject=1:length(datafile_names)
             EEG_copy = eeg_rejsuperpose( EEG_copy, 1, 1, 1, 1, 1, 1, 1, 1);
             artifacted_epochs=EEG_copy.reject.rejglobal;
 
+            % Find flat channels
+            flatChans = find(range(squeeze(EEG_copy.data(ch,:,:)),1) < 1);
+            if ~isempty(flatChans)
+                artifacted_epochs(flatChans) = 1;
+            end
+            
             % Find bad channel / channel with more than 20% artifacted epochs
             if sum(artifacted_epochs) > (numEpochs*20/100)
                 ica_prep_badChans(chanCounter) = ch;
