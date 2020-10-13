@@ -982,7 +982,7 @@ for subject=1:length(datafile_names)
             EEG = eeg_checkset( EEG );
             EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
             % only mark epochs for rejection if all frontal channels are bad
-            blink_epochs = find(sum(EEG.reject.rejthreshE(frontal_channels_idx,:))==2);
+            blink_epochs = find(sum(EEG.reject.rejthreshE(frontal_channels_idx,:))==length(frontal_channels_idx));
             if length(blink_epochs) == EEG.trials % if all epochs marked for rejection
                 all_bad_epochs = 1; % set at 1 so we don't save the file below
             else
