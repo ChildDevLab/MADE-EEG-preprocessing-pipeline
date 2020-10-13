@@ -681,7 +681,8 @@ for subject=1:length(datafile_names)
         EEG_copy = eeg_checkset(EEG_copy);
         
         if output_format == 3 % if BIDS format
-            badICs = adjusted_ADJUST(EEG_copy, [output_location filesep current_subject '_adjust_report']); % save in raw data folder
+            cd([output_location_derivatives filesep current_subject]) % move to this folder so that bump jpeg saves in derivatives folder
+            badICs = adjusted_ADJUST(EEG_copy, [output_location_derivatives filesep current_subject '_adjust_report']); % save in raw data folder
         else % if not BIDS format
             if save_interim_result==1
                 badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
