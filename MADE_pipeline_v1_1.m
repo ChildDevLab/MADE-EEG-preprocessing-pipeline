@@ -72,8 +72,10 @@
 
 clear % clear matlab workspace
 clc % clear matlab command window
-%addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'));% enter the path of the EEGLAB folder in this line
-%addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'))
+
+addpath(genpath('path to eeglab folder'));% enter the path of the EEGLAB folder in this line
+% for example: addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'));
+eeglab % open eeglab
 
 % Do you want to use miniMADE (recommended for low density (<32 channels) systems)
 run_miniMADE = 0; % 0 = NO (run full MADE pipeline),  = YES (run MADE pipeline with minimal preprocessing steps)
@@ -261,7 +263,7 @@ total_epochs_before_artifact_rejection=[];
 total_epochs_after_artifact_rejection=[];
 total_channels_interpolated=[]; % total_channels_interpolated=faster_bad_channels+ica_preparation_bad_channels
 
-eeglab
+
 %% Loop over all data files
 for subject=1:length(datafile_names)
     EEG=[];
