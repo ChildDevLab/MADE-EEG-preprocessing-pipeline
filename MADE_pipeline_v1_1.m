@@ -21,14 +21,26 @@
 %             The baseline removal code has been updated to change [] to 
 %             an accepted argument
 %       -Added a flat channel check to the ICA prep (cleaning) code
-%           * prevents ICA decompositions with less ICs than electrodes
+%           * helps prevent ICA decompositions with less ICs than electrodes
+%       -Changed ICA prep so that participants who lost more than 20% of
+%        electrodes are saved as not having any usable data
+%           * prevents crashing during automated IC rejection
+%           * also prevents datasets with >20% channels interpolated
 %       -Added option to run a version of MADE optimized for low-density EEG
-%       -systemes (<32 channels)
-%           * skips the FASTER, ICA, and interpolation processing steps
+%        systems (<32 channels)... called miniMADE
+%           * skips the FASTER and ICA
+%           * skip interpolation is optional, but recommended
 %           * modifies artifact rejection steps to include checks for flat
 %             channels and voltage jumps
+%           * advanced users have the option to replace bad channels with NaNs
+%             instead of removing them from the code (NOTE: this will require
+%             special code at later analysis steps to remove the NaNs before 
+%             doing any more preprocessing steps)
+%           * advanced users also have the option to use the user entered frontal
+%             electrodes for epoch rejection before NaN replacement
 %       -Added BIDS as a 3rd formatting option for saving data
-%         
+%           * saves raw data in BIDS format AND preprocessed data in BIDS format
+%           * requires the user to fill out a few addition fields
 % ----------------------------------------------------------------------- %
 
 % MADE uses EEGLAB toolbox and some of its plugins. Before running the pipeline, you have to install the following:
