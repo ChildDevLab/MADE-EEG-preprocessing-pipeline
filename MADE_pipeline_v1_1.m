@@ -164,6 +164,9 @@ allow_missing_chans = 0; % this will replace bad channels with NaNs, 0 = NO and 
 % If allow_missing_chans = 1 (YES), volt_threshold values will be used to determine which channels are bad and will be replaced with NaN
 % If allow_missing_chans = 1 (YES), interp_epoch & interp_channels CANNOT also = 1 (YES)
 % If allow_missing_chans = 1 (YES), an average rereference cannot be used (reref cannot = [])
+blink_check = 0; % this will check for blinks using the frontal_channels (defined in #12) and remove epochs containing them before replacing bad channels with NaNs
+% This field will only be considered if allow_missing_chans = 1 (YES)
+% WARNING: Make sure frontal_channels contains a list of frontal channels to check... If this variable is not properly defined the code will crash
 
 % ********* no need to edit beyond this point for EGI .mff data **********
 % ********* for non-.mff data format edit data import function ***********
@@ -966,6 +969,26 @@ for subject=1:length(datafile_names)
                 % re-reference to new reference channels
                 EEG = eeg_checkset(EEG);
                 EEG = pop_reref( EEG, reref_chans);
+            end
+        end
+        
+        if all_bad_epochs == 0 && blink_check == 1 % look at user entered frontal channels and remove artefacted epochs
+            frontal_channels_idx=zeros(1, length(frontal_channels));
+            for rr=1:length(frontal_channels)
+                frontal_channels_idx(rr)=find(strcmp({EEG.chanlocs.labels}, frontal_channels{rr}));
+            end
+            % perform traditional artifact rejection for rereference channels
+            EEG = pop_eegthresh(EEG, 1, frontal_channels_idx, volt_threshold(1), volt_threshold(2), EEG.xmin, EEG.xmax, 0, 0);
+            EEG = eeg_checkset( EEG );
+            EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
+            % only mark epochs for rejection if all frontal channels are bad
+            blink_epochs = find(sum(EEG.reject.rejthreshE(frontal_channels_idx,:))==2);
+            if length(blink_epochs) == EEG.trials % if all epochs marked for rejection
+                all_bad_epochs = 1; % set at 1 so we don't save the file below
+            else
+                % reject epochs where rereference channels are bad
+                EEG = pop_rejepoch( EEG, blink_epochs, 0);
+                EEG = eeg_checkset(EEG);
             end
         end
         
