@@ -1114,26 +1114,44 @@ for subject=1:length(datafile_names)
         EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_processed_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
     end
     
+    %% Create the report table for all the data files with relevant preprocessing outputs.
+    if output_format < 3
+        cd(output_location)
+    else
+        cd(output_location_derivatives)
+    end
+    if run_miniMADE == 0
+        % check if file already exists and add to instead of overwriting if it does
+        if exist([output_location 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
+            % load existing table (do every iteration in case of crash)
+            report_table = readtable([output_location 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+            % make table for current subject
+            report_table2=table(datafile_names(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)');
+            report_table2.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+            % add current subject to existing output table
+            report_table = outerjoin(report_table,report_table2,'MergeKeys', true);
+        else % create the file for the first iteration
+            report_table=table(datafile_names(1:subject)', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
+                total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
+            report_table.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
+                'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
+                'total_epochs_after_artifact_rejection', 'total_channels_interpolated'};
+        end
+        writetable(report_table, ['MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+    elseif run_miniMADE == 1
+        % check if file already exists and add to instead of overwriting if it does
+        if exist([output_location 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
+            % load existing table (do every iteration in case of crash)
+            report_table = readtable([output_location 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+            % make table for current subject
+            report_table2=table(datafile_names(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)');
+            report_table2.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+            % add current subject to existing output table
+            report_table = outerjoin(report_table,report_table2,'MergeKeys', true);
+        else % create the file for the first iteration
+            report_table=table(datafile_names(1:subject)', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection');
+            report_table.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+        end
+        writetable(report_table, ['miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+    end
 end % end of subject loop
-
-%% Create the report table for all the data files with relevant preprocessing outputs.
-if output_format < 3
-    cd(output_location)
-else
-    cd(output_location_derivatives)
-end
-if run_miniMADE == 0
-    report_table=table(datafile_names', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
-        total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
-
-    report_table.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
-        'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
-        'total_epochs_after_artifact_rejection', 'total_channels_interpolated'};
-    writetable(report_table, ['MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
-
-elseif run_miniMADE == 1
-    report_table=table(datafile_names', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection');
-
-    report_table.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
-    writetable(report_table, ['miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
-end
