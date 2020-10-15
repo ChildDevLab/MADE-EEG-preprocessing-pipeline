@@ -1047,8 +1047,24 @@ for subject=1:length(datafile_names)
                 %flat_mat(e) = ~isempty(flatChanNum);
                 %jump_mat(e) = length(unique(jump_chans));
             end
-            EEG.data = tmpData;
+            EEG.data = tmpData; % save data containing NaNs back to EEG struct
+            
+            % reformat badChans for output table
+            total_epochs_by_chan_after_artifact_rejection = {'';[]}; badChansSum = [];
+            total_epochs_by_chan_after_artifact_rejection(1,1:EEG.nbchan) = strcat(chans_labels2,'_total_epochs_after_artifact_rejection');
+            badChansSum = sum((badChans-1)*-1,2)'; 
+            for cch = 1:EEG.nbchan
+                total_epochs_by_chan_after_artifact_rejection{2,cch} = badChansSum(cch);
+            end
+        else
+            total_epochs_by_chan_after_artifact_rejection = {'';[]}; badChansSum = [];
+            total_epochs_by_chan_after_artifact_rejection(1,1:EEG.nbchan) = strcat(chans_labels2,'_total_epochs_after_artifact_rejection');
+            for cch = 1:EEG.nbchan
+                total_epochs_by_chan_after_artifact_rejection{2,cch} = 0;
+            end
         end
+        total_epochs_by_chan_after_artifact_rejection{1,EEG.nbchan+1} = 'datafile_names';
+        total_epochs_by_chan_after_artifact_rejection{2,EEG.nbchan+1} =  datafile_names{subject};
     end % end advanced option to use NaNs
     
     % if all epochs are found bad during artifact rejection
@@ -1126,12 +1142,15 @@ for subject=1:length(datafile_names)
             % load existing table (do every iteration in case of crash)
             report_table = readtable([output_location 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
             % make table for current subject
-            report_table2=table(datafile_names(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)');
-            report_table2.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+            report_table2=table(datafile_names(subject)', reference_used_for_faster(subject)', faster_bad_channels(subject)', ica_preparation_bad_channels(subject)', length_ica_data(subject)', ...
+                total_ICs(subject)', ICs_removed(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)',total_channels_interpolated(subject)');
+            report_table2.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
+                'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
+                'total_epochs_after_artifact_rejection', 'total_channels_interpolated'};
             % add current subject to existing output table
             report_table = outerjoin(report_table,report_table2,'MergeKeys', true);
         else % create the file for the first iteration
-            report_table=table(datafile_names(1:subject)', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
+            report_table=table(datafile_names(subject)', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
                 total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
             report_table.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
                 'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
@@ -1146,11 +1165,19 @@ for subject=1:length(datafile_names)
             % make table for current subject
             report_table2=table(datafile_names(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)');
             report_table2.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+            if allow_missing_chans == 1 % add epochs by channel to output
+                epochT = cell2table(total_epochs_by_chan_after_artifact_rejection(2,:), 'VariableNames', total_epochs_by_chan_after_artifact_rejection(1,:));
+                report_table2 = outerjoin(report_table2,epochT,'MergeKeys', true);
+            end
             % add current subject to existing output table
             report_table = outerjoin(report_table,report_table2,'MergeKeys', true);
         else % create the file for the first iteration
-            report_table=table(datafile_names(1:subject)', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection');
+            report_table=table(datafile_names(subject)', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection');
             report_table.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
+            if allow_missing_chans == 1 % add epochs by channel to output
+                epochT = cell2table(total_epochs_by_chan_after_artifact_rejection(2,:), 'VariableNames', total_epochs_by_chan_after_artifact_rejection(1,:));
+                report_table = outerjoin(report_table,epochT,'MergeKeys', true);
+            end
         end
         writetable(report_table, ['miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
     end
