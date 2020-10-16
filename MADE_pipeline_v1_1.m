@@ -995,6 +995,13 @@ for subject=1:length(datafile_names)
             end
         end
         
+        % grab new channel labels in case some channels have been removed
+        chans=[]; chans_labels2=[];
+        chans_labels2=cell(1,EEG.nbchan);
+        for i=1:EEG.nbchan
+            chans_labels2{i}= EEG.chanlocs(i).labels;
+        end
+            
         if all_bad_epochs == 0 && blink_check == 1 % look at user entered frontal channels and remove artefacted epochs
             frontal_channels_idx=zeros(1, length(frontal_channels));
             for rr=1:length(frontal_channels)
