@@ -16,10 +16,13 @@
 %
 % v1_1: Sept. 23, 2020 - modified by Stephanie C. Leach
 %       -Fixed bugs arising from changes in EEGLab and Matlab functions
-%           * bug reported Sept. 23, 2020 by Sonya Troller-Renfree.
-%             pop_rmbase() no longer works with [] as the second argument.
+%           * pop_rmbase() no longer works with [] as the second argument.
 %             The baseline removal code has been updated to change [] to 
 %             an accepted argument
+%       -Fixed a bug with the FASTER bad channel section
+%           * removing the reference channel before removing the channels
+%             marked as bad by FASTER causes an error if the reference
+%             channel isn't the last row in the data matrix
 %       -Added a flat channel check to the ICA prep (cleaning) code
 %           * helps prevent ICA decompositions with less ICs than electrodes
 %       -Changed ICA prep so that participants who lost more than 20% of
@@ -29,17 +32,17 @@
 %       -Added option to run a version of MADE optimized for low-density EEG
 %        systems (<32 channels)... called miniMADE
 %           * skips the FASTER and ICA
-%           * skip interpolation is optional, but recommended
+%           * skipping interpolation is optional, but recommended
 %           * modifies artifact rejection steps to include checks for flat
 %             channels and voltage jumps
 %           * advanced users have the option to replace bad channels with NaNs
 %             instead of removing them from the code (NOTE: this will require
 %             special code at later analysis steps to remove the NaNs before 
-%             doing any more preprocessing steps)
+%             doing any more preprocessing steps or analyses)
 %           * advanced users also have the option to use the user entered frontal
-%             electrodes for epoch rejection before NaN replacement
+%             electrodes for additional epoch rejection before NaN replacement
 %       -Added BIDS as a 3rd formatting option for saving data
-%           * saves raw data in BIDS format AND preprocessed data in BIDS format
+%           * saves raw AND preprocessed data in BIDS format
 %           * requires the user to fill out a few addition fields
 % ----------------------------------------------------------------------- %
 
@@ -119,7 +122,7 @@ down_sample = 0; % 0 = NO (no down sampling), 1 = YES (down sampling)
 sampling_rate = xxx; % set sampling rate (in Hz), if you want to down sample
 
 % 6. Do you want to delete the outer layer of the channels? (Rationale has been described in MADE manuscript)
-%    This fnction can also be used to down sample electrodes. For example, if EEG was recorded with 128 channels but you would
+%    This function can also be used to down sample electrodes. For example, if EEG was recorded with 128 channels but you would
 %    like to analyse only 64 channels, you can assign the list of channnels to be excluded in the 'outerlayer_channel' variable.    
 delete_outerlayer = 0; % 0 = NO (do not delete outer layer), 1 = YES (delete outerlayer);
 % If you want to delete outer layer, make a list of channels to be deleted
@@ -153,7 +156,7 @@ interp_epoch = 0; % 0 = NO, 1 = YES.
 frontal_channels = {'list of frontal channels'}; % If you set interp_epoch = 1, enter the list of frontal channels to check (see manuscript for detail)
 
 %13. Do you want to interpolate the bad channels that were removed from data?
-% Note: interpolation is not recommended for systems with less than 20 channels
+% Note: because miniMADE automatically skips FASTER and ICA, this field will not affect miniMADE preprocessing
 interp_channels = 0; % 0 = NO (Do not interpolate), 1 = YES (interpolate missing channels)
 
 % 14. Do you want to rereference your data?
@@ -312,6 +315,9 @@ for subject=1:length(datafile_names)
         events_to_tsv(EEG); % save event info
         channelloc_to_tsv(EEG); % save EEG.chanlocs in .tsv format
         electrodes_to_tsv(EEG); % save electrode info
+        eeg_descript = jsonread( [fileparts(which('template_eeg.json')) filesep 'template_eeg.json'] );
+        try eeg_descript.EEGChannelCount = EEG.nbchan; eeg_descript.RecordingDuration = EEG.xmax; eeg_descript.SamplingFrequency = EEG.srate; catch warning('Channel count, recording duration, and sampling rate may not have auto populated in eeg.json file'); end
+        jsonwrite([output_location filesep 'participants.json'], eeg_descript,struct('indent','  '));
         % create subject folder within derivatives folder for preprocessed data
         if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
             mkdir([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject])
@@ -455,7 +461,6 @@ for subject=1:length(datafile_names)
             FASTbadChans=find(FASTbadIdx==1);
             FASTbadChans=FASTbadChans(FASTbadChans~=ref_chan);
             reference_used_for_faster{subject}={EEG.chanlocs(ref_chan).labels};
-            EEG = pop_select( EEG,'nochannel', ref_chan);
             EEG = eeg_checkset(EEG);
             channels_analysed=EEG.chanlocs; % keep full channel locations to use later for interpolation of bad channels
         elseif numel(ref_chan)==0
@@ -492,6 +497,9 @@ for subject=1:length(datafile_names)
             % Reject channels that are bad as identified by Faster
             EEG = pop_select( EEG,'nochannel', FASTbadChans);
             EEG = eeg_checkset(EEG);
+            if numel(ref_chan)==1
+                EEG = pop_select( EEG,'nochannel', ref_chan); % remove reference channel
+            end
         end
 
         if numel(FASTbadChans)==0
