@@ -18,17 +18,21 @@
 %       -Fixed bugs arising from changes in EEGLab and Matlab functions
 %           * pop_rmbase() no longer works with [] as the second argument.
 %             The baseline removal code has been updated to change [] to 
-%             an accepted argument
+%             an accepted argument in the baseline removal section
 %       -Fixed a bug with the FASTER bad channel section
 %           * removing the reference channel before removing the channels
 %             marked as bad by FASTER causes an error if the reference
-%             channel isn't the last row in the data matrix
+%             channel isn't the last row in the data matrix. We've now 
+%             moved the reference channel removal to after bad channel 
+%             removal (reference channel identified again)
 %       -Added a flat channel check to the ICA prep (cleaning) code
 %           * helps prevent ICA decompositions with less ICs than electrodes
 %       -Changed ICA prep so that participants who lost more than 20% of
 %        electrodes are saved as not having any usable data
 %           * prevents crashing during automated IC rejection
 %           * also prevents datasets with >20% channels interpolated
+%       -Added a rank check before ADJUST or Adjusted-ADJUST
+%           * avoids crashing when rank is < total number of channels
 %       -Added option to run a version of MADE optimized for low-density EEG
 %        systems (<32 channels)... called miniMADE
 %           * skips the FASTER and ICA
@@ -111,11 +115,11 @@ channel_locations = ['path' filesep 'channel location file name.extension'];
 % 4. Do your data need correction for anti-aliasing filter and/or task related time offset?
 adjust_time_offset = 0; % 0 = NO (no correction), 1 = YES (correct time offset)
 % If your data need correction for time offset, initialize the offset time (in milliseconds)
-filter_timeoffset = xx;     % anti-aliasing time offset (in milliseconds). 0 = No time offset
-stimulus_timeoffset   = xx; % stimulus related time offset (in milliseconds). 0 = No time offset
-response_timeoffset = xx;    % response related time offset (in milliseconds). 0 = No time offset
-stimulus_markers = {'xxx', 'xxx'};      % enter the stimulus makers that need to be adjusted for time offset
-respose_markers = {'xxx', 'xxx'};       % enter the response makers that need to be adjusted for time offset
+filter_timeoffset   = xx; % anti-aliasing time offset (in milliseconds). 0 = No time offset
+stimulus_timeoffset = xx; % stimulus related time offset (in milliseconds). 0 = No time offset
+response_timeoffset = xx; % response related time offset (in milliseconds). 0 = No time offset
+stimulus_markers = {'xxx', 'xxx'}; % enter the stimulus makers that need to be adjusted for time offset
+respose_markers  = {'xxx', 'xxx'}; % enter the response makers that need to be adjusted for time offset
 
 % 5. Do you want to down sample the data?
 down_sample = 0; % 0 = NO (no down sampling), 1 = YES (down sampling)
@@ -127,6 +131,7 @@ sampling_rate = xxx; % set sampling rate (in Hz), if you want to down sample
 delete_outerlayer = 0; % 0 = NO (do not delete outer layer), 1 = YES (delete outerlayer);
 % If you want to delete outer layer, make a list of channels to be deleted
 outerlayer_channel = {'list of channels'}; % list of channels
+
 % 7. Initialize the filters
 highpass = xx; % High-pass frequency
 lowpass  = xx; % Low-pass frequency. We recommend low-pass filter at/below line noise frequency (see manuscript for detail)
@@ -172,7 +177,7 @@ save_interim_result = 0; % 0 = NO (Do not save) 1 = YES (save interim results)
 % 16. How do you want to save your data? .set or .mat
 output_format = xx; % 1 = .set (EEGLAB data structure), 2 = .mat (Matlab data structure), 3 = BIDS format
 % If you chose BIDS format, specify subject number location in the file name and the task name
-subject_number_loc = [xx xx]; % should enter as [start stop] locations (e.g., par001_eeg.mff would be entered as [4 6])
+subject_number_loc = [1 2]; % should enter as [start stop] locations (e.g., par001_eeg.mff would be entered as [4 6])
 task_name = 'task_name'; % should enter the eeg task name you want included in the file name
 
 % ---------------- ADVANCED OPTIONS ---------------- %
@@ -186,6 +191,8 @@ allow_missing_chans = 0; % this will replace bad channels with NaNs, 0 = NO and 
 blink_check = 0; % this will check for blinks using the frontal_channels (defined in #12) and remove epochs containing them before replacing bad channels with NaNs
 % This field will only be considered if allow_missing_chans = 1 (YES)
 % WARNING: Make sure frontal_channels contains a list of frontal channels to check... If this variable is not properly defined the code will crash
+chan_thresh = 0; % acceptable values are 0-1 and represent the percent of channels that must be good to keep an epoch
+% for example: chan_thresh = 0.8 would remove epochs where greater than 80% of channels were replaced by NaNs
 
 % ********* no need to edit beyond this point for EGI .mff data **********
 % ********* for non-.mff data format edit data import function ***********
@@ -270,7 +277,7 @@ elseif output_format == 3 % if BIDS format
 end
 
 %% Initialize output variables
-reference_used_for_faster=[]; % reference channel used for running faster to identify bad channel/s
+reference_used_for_faster={}; % reference channel used for running faster to identify bad channel/s
 faster_bad_channels=[]; % number of bad channel/s identified by faster
 ica_preparation_bad_channels=[]; % number of bad channel/s due to channel/s exceeding xx% of artifacted epochs
 length_ica_data=[]; % length of data (in second) fed into ICA decomposition
@@ -288,7 +295,7 @@ for subject=1:length(datafile_names)
     fprintf('\n\n\n*** Processing subject %d (%s) ***\n\n\n', subject, datafile_names{subject});
     
     %% STEP 1: Import EGI data file and relevant information
-    EEG=mff_import([rawdata_location filesep datafile_names{subject}]);
+    EEG = mff_import([rawdata_location filesep datafile_names{subject}]);
     EEG = eeg_checkset(EEG);
     
     % Edit this data import function and use appropriate plugin from EEGLAB
@@ -498,6 +505,7 @@ for subject=1:length(datafile_names)
             EEG = pop_select( EEG,'nochannel', FASTbadChans);
             EEG = eeg_checkset(EEG);
             if numel(ref_chan)==1
+                ref_chan=find(any(EEG.data, 2)==0);
                 EEG = pop_select( EEG,'nochannel', ref_chan); % remove reference channel
             end
         end
@@ -710,18 +718,22 @@ for subject=1:length(datafile_names)
         EEG_copy =eeg_regepochs(EEG_copy,'recurrence', 1, 'limits',[0 1], 'rmbase', [NaN], 'eventtype', '999'); % insert temporary marker 1 second apart and create epochs
         EEG_copy = eeg_checkset(EEG_copy);
         
-        if output_format == 3 % if BIDS format
-            cd([output_location_derivatives filesep current_subject]) % move to this folder so that bump jpeg saves in derivatives folder
-            badICs = adjusted_ADJUST(EEG_copy, [output_location_derivatives filesep current_subject '_adjust_report']); % save in raw data folder
-        else % if not BIDS format
-            if save_interim_result==1
-                badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
-            else
-                badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+        if size(EEG_copy.icaweights,1) == size(EEG_copy.icaweights,2)
+            if output_format == 3 % if BIDS format
+                cd([output_location_derivatives filesep current_subject]) % move to this folder so that bump jpeg saves in derivatives folder
+                badICs = adjusted_ADJUST(EEG_copy, [output_location_derivatives filesep current_subject '_adjust_report']); % save in raw data folder
+            else % if not BIDS format
+                if save_interim_result==1
+                    badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+                else
+                    badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+                end
             end
+            close all;
+        else % if rank is less than the number of electrodes, throw a warning message
+            warning('The rank is less than the number of electrodes. ADJUST will be skipped. Artefacted ICs will have to be manually rejected for this participant');
         end
-        close all;
-
+        
         % Mark the bad ICs found by ADJUST
         for ic=1:length(badICs)
             EEG.reject.gcompreject(1, badICs(ic))=1;
@@ -959,7 +971,7 @@ for subject=1:length(datafile_names)
                     badepoch=logical(badepoch);
                 end
                 % If all epochs are artifacted, save the dataset and ignore rest of the preprocessing for this subject.
-                if sum(EEG.reject.rejthresh)==EEG.trials || sum(EEG.reject.rejthresh)+1==EEG.trials
+                if sum(EEG.reject.rejthresh)==EEG.trials || sum(EEG.reject.rejthresh)+1==EEG.trials || sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
                     all_bad_epochs=1;
                     warning(['No usable data for datafile', datafile_names{subject}]);
                 else
@@ -1064,6 +1076,22 @@ for subject=1:length(datafile_names)
             end
             EEG.data = tmpData; % save data containing NaNs back to EEG struct
             
+            % reject epochs where NaN channel numbers are above the user entered threshold
+            badepoch=zeros(1, EEG.trials);
+            for ei=1:EEG.trials
+                if sum(badChans(:,ei)) > chan_thresh % check if there are any bad chans
+                    badepoch(ei)= 1;
+                end
+            end
+            badepoch=logical(badepoch);
+            if sum(badepoch)==EEG.trials
+                all_bad_epochs=1;
+                warning(['No usable data for datafile', datafile_names{subject}]);
+            else
+                EEG = pop_rejepoch(EEG, badepoch, 0);
+                EEG = eeg_checkset(EEG);
+            end
+                
             % reformat badChans for output table
             total_epochs_by_chan_after_artifact_rejection = {'';[]}; badChansSum = [];
             total_epochs_by_chan_after_artifact_rejection(1,1:EEG.nbchan) = strcat(chans_labels2,'_total_epochs_after_artifact_rejection');
@@ -1153,9 +1181,9 @@ for subject=1:length(datafile_names)
     end
     if run_miniMADE == 0
         % check if file already exists and add to instead of overwriting if it does
-        if exist([output_location 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
+        if exist([output_location filesep 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
             % load existing table (do every iteration in case of crash)
-            report_table = readtable([output_location 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+            report_table = readtable([output_location filesep 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
             % make table for current subject
             report_table2=table(datafile_names(subject)', reference_used_for_faster(subject)', faster_bad_channels(subject)', ica_preparation_bad_channels(subject)', length_ica_data(subject)', ...
                 total_ICs(subject)', ICs_removed(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)',total_channels_interpolated(subject)');
@@ -1174,9 +1202,9 @@ for subject=1:length(datafile_names)
         writetable(report_table, ['MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
     elseif run_miniMADE == 1
         % check if file already exists and add to instead of overwriting if it does
-        if exist([output_location 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
+        if exist([output_location filesep 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
             % load existing table (do every iteration in case of crash)
-            report_table = readtable([output_location 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+            report_table = readtable([output_location filesep 'miniMADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
             % make table for current subject
             report_table2=table(datafile_names(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)');
             report_table2.Properties.VariableNames={'datafile_names', 'total_epochs_before_artifact_rejection', 'total_epochs_after_artifact_rejection'};
