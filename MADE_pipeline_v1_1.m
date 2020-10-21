@@ -241,7 +241,7 @@ if allow_missing_chans == 1 && (interp_epoch == 1 || interp_channels == 1)
         ' allow_missing_chans does not allow for channel interpolation. Please make sure interp_epoch and interp_channels are off']);
 end
 
-if allow_missing_chans == 1 && isempty(reref)
+if allow_missing_chans == 1 && rerefer_data == 1 && isempty(reref)
     error(['An average rereference cannot be used if the allow_missing_chans option (ADVANCED) is on...' ...
         ' allow_missing_chans does not allow for average reference. Please ensure only a subset of channels are used for rereferencing']);
 end
@@ -279,7 +279,7 @@ end
 %% Initialize output variables
 reference_used_for_faster={}; % reference channel used for running faster to identify bad channel/s
 faster_bad_channels=[]; % number of bad channel/s identified by faster
-ica_preparation_bad_channels=[]; % number of bad channel/s due to channel/s exceeding xx% of artifacted epochs
+ica_preparation_bad_channels={}; % number of bad channel/s due to channel/s exceeding xx% of artifacted epochs
 length_ica_data=[]; % length of data (in second) fed into ICA decomposition
 total_ICs=[]; % total independent components (ICs)
 ICs_removed=[]; % number of artifacted ICs
@@ -1003,7 +1003,7 @@ for subject=1:length(datafile_names)
             EEG = eeg_checkset( EEG );
             EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
             
-            if length(find(EEG.reject.rejthresh)) == EEG.trials % if all epochs marked for rejection
+            if length(find(EEG.reject.rejthresh)) == EEG.trials || length(find(EEG.reject.rejthresh))+1 == EEG.trials % if all epochs marked for rejection
                 all_bad_epochs = 1; % set at 1 so we don't save the file below
             else
                 % reject epochs where rereference channels are bad
@@ -1033,7 +1033,7 @@ for subject=1:length(datafile_names)
             EEG = eeg_rejsuperpose( EEG, 1, 1, 1, 1, 1, 1, 1, 1);
             % only mark epochs for rejection if all frontal channels are bad
             blink_epochs = find(sum(EEG.reject.rejthreshE(frontal_channels_idx,:))==length(frontal_channels_idx));
-            if length(blink_epochs) == EEG.trials % if all epochs marked for rejection
+            if length(blink_epochs) == EEG.trials || length(blink_epochs)+1 == EEG.trials  % if all epochs marked for rejection
                 all_bad_epochs = 1; % set at 1 so we don't save the file below
             else
                 % reject epochs where rereference channels are bad
@@ -1084,12 +1084,13 @@ for subject=1:length(datafile_names)
                 end
             end
             badepoch=logical(badepoch);
-            if sum(badepoch)==EEG.trials
+            if sum(badepoch)==EEG.trials || sum(badepoch)+1==EEG.trials
                 all_bad_epochs=1;
                 warning(['No usable data for datafile', datafile_names{subject}]);
             else
                 EEG = pop_rejepoch(EEG, badepoch, 0);
                 EEG = eeg_checkset(EEG);
+                badChans = badChans(:,~badepoch);
             end
                 
             % reformat badChans for output table
@@ -1183,9 +1184,9 @@ for subject=1:length(datafile_names)
         % check if file already exists and add to instead of overwriting if it does
         if exist([output_location filesep 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'file') ~= 0
             % load existing table (do every iteration in case of crash)
-            report_table = readtable([output_location filesep 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv']);
+            report_table = readtable([output_location filesep 'MADE_preprocessing_report_', datestr(now,'dd-mm-yyyy'),'.csv'], 'Format', '%s%s%s%s%d%d%s%d%d%d');
             % make table for current subject
-            report_table2=table(datafile_names(subject)', reference_used_for_faster(subject)', faster_bad_channels(subject)', ica_preparation_bad_channels(subject)', length_ica_data(subject)', ...
+            report_table2=table(datafile_names(subject)', reference_used_for_faster{subject}', faster_bad_channels(subject)', ica_preparation_bad_channels(subject)', length_ica_data(subject)', ...
                 total_ICs(subject)', ICs_removed(subject)', total_epochs_before_artifact_rejection(subject)', total_epochs_after_artifact_rejection(subject)',total_channels_interpolated(subject)');
             report_table2.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
                 'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
@@ -1193,7 +1194,7 @@ for subject=1:length(datafile_names)
             % add current subject to existing output table
             report_table = outerjoin(report_table,report_table2,'MergeKeys', true);
         else % create the file for the first iteration
-            report_table=table(datafile_names(subject)', reference_used_for_faster', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
+            report_table=table(datafile_names(subject)', reference_used_for_faster{subject}', faster_bad_channels', ica_preparation_bad_channels', length_ica_data', ...
                 total_ICs', ICs_removed', total_epochs_before_artifact_rejection', total_epochs_after_artifact_rejection',total_channels_interpolated');
             report_table.Properties.VariableNames={'datafile_names', 'reference_used_for_faster', 'faster_bad_channels', ...
                 'ica_preparation_bad_channels', 'length_ica_data', 'total_ICs', 'ICs_removed', 'total_epochs_before_artifact_rejection', ...
