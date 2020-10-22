@@ -1079,7 +1079,7 @@ for subject=1:length(datafile_names)
             % reject epochs where NaN channel numbers are above the user entered threshold
             badepoch=zeros(1, EEG.trials);
             for ei=1:EEG.trials
-                if sum(badChans(:,ei)) > chan_thresh % check if there are any bad chans
+                if sum(badChans(:,ei)) > chan_thresh*EEG.nbchan % check if there are any bad chans
                     badepoch(ei)= 1;
                 end
             end
