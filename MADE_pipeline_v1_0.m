@@ -81,6 +81,8 @@ sampling_rate = xxx; % set sampling rate (in Hz), if you want to down sample
 delete_outerlayer = 0; % 0 = NO (do not delete outer layer), 1 = YES (delete outerlayer);
 % If you want to delete outer layer, make a list of channels to be deleted
 outerlayer_channel = {'list of channels'}; % list of channels
+% recommended list for EGI 128 chanenl net: {'E17' 'E38' 'E43' 'E44' 'E48' 'E49' 'E113' 'E114' 'E119' 'E120' 'E121' 'E125' 'E126' 'E127' 'E128' 'E56' 'E63' 'E68' 'E73' 'E81' 'E88' 'E94' 'E99' 'E107'}
+
 % 7. Initialize the filters
 highpass = xx; % High-pass frequency
 lowpass  = xx; % Low-pass frequency. We recommend low-pass filter at/below line noise frequency (see manuscript for detail)
@@ -107,6 +109,7 @@ volt_threshold = [xx xx]; % lower and upper threshold (in ?V)
 % 12. Do you want to perform epoch level channel interpolation for artifact laden epoch? (see manuscript for detail)
 interp_epoch = 0; % 0 = NO, 1 = YES.
 frontal_channels = {'list of frontal channels'}; % If you set interp_epoch = 1, enter the list of frontal channels to check (see manuscript for detail)
+% recommended list for EGI 128 channel net: {'E1', 'E8', 'E14', 'E21', 'E25', 'E32', 'E17'}
 
 %13. Do you want to interpolate the bad channels that were removed from data?
 interp_channels = 0; % 0 = NO (Do not interpolate), 1 = YES (interpolate missing channels)
