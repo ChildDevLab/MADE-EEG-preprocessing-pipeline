@@ -94,6 +94,10 @@
 clear % clear matlab workspace
 clc % clear matlab command window
 
+% add path to MADE pipeline
+addpath(genpath('path to MADE pipeline folder')
+% for example: addpath(genpath('C:\Users\Berger\Documents\MADE-EEG-preprocessing-pipeline-master'));
+
 addpath(genpath('path to eeglab folder'));% enter the path of the EEGLAB folder in this line
 % for example: addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'));
 eeglab % open eeglab
@@ -320,13 +324,13 @@ for subject=1:length(datafile_names)
         EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg']);
         EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg'],'filepath', [output_location filesep current_subject filesep 'eeg']); % save BIDS format
         % save other variables in BIDS format
-        cd([output_location filesep current_subject])
+        cd([output_location filesep current_subject filesep 'eeg'])
         events_to_tsv(EEG); % save event info
         channelloc_to_tsv(EEG); % save EEG.chanlocs in .tsv format
         electrodes_to_tsv(EEG); % save electrode info
         eeg_descript = jsonread( [fileparts(which('template_eeg.json')) filesep 'template_eeg.json'] );
         try eeg_descript.EEGChannelCount = EEG.nbchan; eeg_descript.RecordingDuration = EEG.xmax; eeg_descript.SamplingFrequency = EEG.srate; catch; warning('Channel count, recording duration, and sampling rate may not have auto populated in eeg.json file'); end
-        jsonwrite([output_location filesep 'participants.json'], eeg_descript,struct('indent','  '));
+        jsonwrite([output_location filesep current_subject filesep 'eeg' filesep current_subject '_task-' task_name '_run-01_eeg.json'], eeg_descript,struct('indent','  '));
         % create subject folder within derivatives folder for preprocessed data
         if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
             mkdir([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject])
