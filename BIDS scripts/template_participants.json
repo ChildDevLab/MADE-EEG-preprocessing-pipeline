@@ -1,0 +1,16 @@
+{
+  "participant_id": {
+    "LongName": "Participant identifier",
+    "Description": "Unique participant identifier"
+  },
+  "gender": {
+    "Description": "Sex of the participant",
+    "Levels": {
+      "M": "male",
+      "F": "female"
+,	"U": "unknown"    }
+  },
+  "age": {
+    "Description": "age of the participant",
+    "Units": "years"
+  }}

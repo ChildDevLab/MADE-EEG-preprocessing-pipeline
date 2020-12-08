@@ -1,0 +1,20 @@
+{
+  "InstitutionAddress": "",
+  "InstitutionName": "",
+  "InstitutionalDepartmentName": "",
+  "PowerLineFrequency": 0,
+  "ManufacturersModelName": "",
+  "TaskName": "",
+  "EEGReference": "",
+  "Manufacturer": "",
+  "EEGChannelCount": 0,
+  "MiscChannelCount": 0,
+  "RecordingType": "",
+  "RecordingDuration": 0,
+  "SamplingFrequency": 0,
+  "SubjectArtefactDescription": "",
+  "EOGChannelCount": 0,
+  "ECGChannelCount": 0,
+  "EMGChannelCount": 0,
+  "SoftwareFilters": ""
+}
