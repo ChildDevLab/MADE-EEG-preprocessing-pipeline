@@ -95,10 +95,10 @@ clear % clear matlab workspace
 clc % clear matlab command window
 
 % add path to MADE pipeline
-addpath(genpath('path to MADE pipeline folder')
+addpath(genpath('path to MADE pipeline folder'))
 % for example: addpath(genpath('C:\Users\Berger\Documents\MADE-EEG-preprocessing-pipeline-master'));
 
-addpath(genpath('path to eeglab folder'));% enter the path of the EEGLAB folder in this line
+addpath('path to eeglab folder');% enter the path of the EEGLAB folder in this line
 % for example: addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'));
 eeglab % open eeglab
 
@@ -165,6 +165,7 @@ volt_threshold = [xx xx]; % lower and upper threshold (in ?V)
 interp_epoch = 0; % 0 = NO, 1 = YES.
 frontal_channels = {'list of frontal channels'}; % If you set interp_epoch = 1, enter the list of frontal channels to check (see manuscript for detail)
 % recommended list for EGI 128 channel net: {'E1', 'E8', 'E14', 'E21', 'E25', 'E32', 'E17'}
+% recommended list for EGI 64 channel net: {'E1', 'E5', 'E10', 'E17'}
 
 %13. Do you want to interpolate the bad channels that were removed from data?
 % Note: because miniMADE automatically skips FASTER and ICA, this field will not affect miniMADE preprocessing
@@ -329,7 +330,7 @@ for subject=1:length(datafile_names)
         channelloc_to_tsv(EEG); % save EEG.chanlocs in .tsv format
         electrodes_to_tsv(EEG); % save electrode info
         eeg_descript = jsonread( [fileparts(which('template_eeg.json')) filesep 'template_eeg.json'] );
-        try eeg_descript.EEGChannelCount = EEG.nbchan; eeg_descript.RecordingDuration = EEG.xmax; eeg_descript.SamplingFrequency = EEG.srate; catch; warning('Channel count, recording duration, and sampling rate may not have auto populated in eeg.json file'); end
+        try eeg_descript.TaskName = task_name; eeg_descript.EEGChannelCount = EEG.nbchan; eeg_descript.RecordingDuration = EEG.xmax; eeg_descript.SamplingFrequency = EEG.srate; catch; warning('Task name, channel count, recording duration, and sampling rate may not have auto populated in eeg.json file'); end
         jsonwrite([output_location filesep current_subject filesep 'eeg' filesep current_subject '_task-' task_name '_run-01_eeg.json'], eeg_descript,struct('indent','  '));
         % create subject folder within derivatives folder for preprocessed data
         if exist([ output_location_derivatives filesep 'eegpreprocess' filesep current_subject]) == 0
@@ -354,6 +355,8 @@ for subject=1:length(datafile_names)
             warning('Channel interpolation is not recommended for low-density systems with fewer than 20 channels');
         end
     end
+    % if reref is a vector (type double) instead of a cell array, grab the electrode name(s)
+    if ~iscell(reref); reref = {EEG.chanlocs(reref).labels}; end % this will prevent using the wrong channel in cases where we remove channels
     
     %% STEP 3: Adjust anti-aliasing and task related time offset
     if adjust_time_offset==1
