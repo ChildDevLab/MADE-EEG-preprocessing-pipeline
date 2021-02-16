@@ -1068,8 +1068,8 @@ for subject=1:length(datafile_names)
                 EEGe = pop_selectevent( EEG, 'epoch',e,'deleteevents','off','deleteepochs','on','invertepochs','off');
                 badChanNum = find(badChans(:,e)==1); %find which channels are bad for this epoch
                 % find and add flat chans to the bad chans list
-                flatChanNum = find(range(EEGe.data,2) < 1);
-                badChanNum  = unique([badChanNum; flatChanNum]);
+                flatChanNum = [find(range(EEGe.data(:,1:(EEG.pnts/2)),2) < 1); find(range(EEGe.data(:,(EEG.pnts/2):EEG.pnts),2) < 1)];
+                badChanNum  = unique([badChanNum; unique(flatChanNum)]);
                 % find chans with a large jump/deflection (also bad chans) by taking 1st derivative
                 [jump_chans, ~] = find( abs(diff(EEGe.data,1,2) ./ repmat(diff(1:EEGe.pnts),EEGe.nbchan,1)) > 50);
                 badChanNum = unique([badChanNum; unique(jump_chans)]);
