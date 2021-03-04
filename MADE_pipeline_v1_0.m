@@ -209,6 +209,17 @@ for subject=1:length(datafile_names)
 %     EEG = eeg_checkset(EEG);
 %     EEG = pop_select( EEG,'nochannel', 65:72); % delete redundant channels
     
+    %% STEP 1.5: Delete discontinuous data from the raw data file (OPTIONAL, but necessary for most EGI files)
+    % Note: code below may need to be modified to select the appropriate markers (depends on the import function)
+    % remove discontinous data at the start of the file
+%    disconMarkers = find(strcmp({EEG.event.type}, 'boundary')); % boundary markers often indicate discontinuity
+%    EEG = eeg_eegrej( EEG, [1 EEG.event(disconMarkers(1)).latency] ); % remove discontinuous chunk... if not EGI, MODIFY BEFORE USING THIS SECTION
+%    EEG = eeg_checkset( EEG );
+    % remove data after last trsp (OPTIONAL for EGI files... useful when file has noisy data at the end)
+%    trsp_flags = find(strcmp({EEG.event.type},'TRSP')); % find indices of TRSP flags
+%    EEG = eeg_eegrej( EEG, [(EEG.event(trsp_flags(end)).latency+(1.5*EEG.srate)) EEG.pnts] ); % remove everything 1.5 seconds after the last TRSP
+%    EEG = eeg_checkset( EEG );
+    
     %% STEP 2: Import channel locations
     EEG=pop_chanedit(EEG, 'load',{channel_locations 'filetype' 'autodetect'});
     EEG = eeg_checkset( EEG );
@@ -217,6 +228,10 @@ for subject=1:length(datafile_names)
     if size(EEG.data, 1) ~= length(EEG.chanlocs)
         error('The size of the data does not match with channel numbers.');
     end
+    
+    %% STEP 2.5: Label the task (OPTIONAL)
+    % insert the call to a labeling script below (script will need to be on your path)
+%    edit_event_markers_example() % an example of a labeling script from the appendix folder that can be called
     
     %% STEP 3: Adjust anti-aliasing and task related time offset
     if adjust_time_offset==1
@@ -336,7 +351,6 @@ for subject=1:length(datafile_names)
         FASTbadChans=find(FASTbadIdx==1);
         FASTbadChans=FASTbadChans(FASTbadChans~=ref_chan);
         reference_used_for_faster{subject}={EEG.chanlocs(ref_chan).labels};
-        EEG = pop_select( EEG,'nochannel', ref_chan);
         EEG = eeg_checkset(EEG);
         channels_analysed=EEG.chanlocs; % keep full channel locations to use later for interpolation of bad channels
     elseif numel(ref_chan)==0
@@ -369,6 +383,10 @@ for subject=1:length(datafile_names)
         % Reject channels that are bad as identified by Faster
         EEG = pop_select( EEG,'nochannel', FASTbadChans);
         EEG = eeg_checkset(EEG);
+        if numel(ref_chan)==1
+            ref_chan=find(any(EEG.data, 2)==0);
+            EEG = pop_select( EEG,'nochannel', ref_chan); % remove reference channel
+        end
     end
     
     if numel(FASTbadChans)==0
