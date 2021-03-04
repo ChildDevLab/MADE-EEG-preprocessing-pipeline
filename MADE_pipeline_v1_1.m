@@ -312,7 +312,18 @@ for subject=1:length(datafile_names)
 %     EEG = eeg_checkset(EEG);
 %     EEG = pop_select( EEG,'nochannel', 65:72); % delete redundant channels
     
-    % if BIDS output format requested
+    %% STEP 1.5: Delete discontinuous data from the raw data file (OPTIONAL, but necessary for most EGI files)
+    % Note: code below may need to be modified to select the appropriate markers (depends on the import function)
+    % remove discontinous data at the start of the file
+%    disconMarkers = find(strcmp({EEG.event.type}, 'boundary')); % boundary markers often indicate discontinuity
+%    EEG = eeg_eegrej( EEG, [1 EEG.event(disconMarkers(1)).latency] ); % remove discontinuous chunk... if not EGI, MODIFY BEFORE USING THIS SECTION
+%    EEG = eeg_checkset( EEG );
+    % remove data after last trsp (OPTIONAL for EGI files... useful when file has noisy data at the end)
+%    trsp_flags = find(strcmp({EEG.event.type},'TRSP')); % find indices of TRSP flags
+%    EEG = eeg_eegrej( EEG, [(EEG.event(trsp_flags(end)).latency+(1.5*EEG.srate)) EEG.pnts] ); % remove everything 1.5 seconds after the last TRSP
+%    EEG = eeg_checkset( EEG );
+    
+    %% if BIDS output format requested
     if output_format == 3
         current_subject = ['sub-' datafile_names{subject}(subject_number_loc(1):subject_number_loc(2))];
         % create folder to save BIDS formatted raw data (no preprocessing)
@@ -338,6 +349,7 @@ for subject=1:length(datafile_names)
         end
     end
     
+    
     %% STEP 2: Import channel locations
     EEG=pop_chanedit(EEG, 'load',{channel_locations 'filetype' 'autodetect'});
     EEG = eeg_checkset( EEG );
@@ -357,6 +369,10 @@ for subject=1:length(datafile_names)
     end
     % if reref is a vector (type double) instead of a cell array, grab the electrode name(s)
     if ~iscell(reref); reref = {EEG.chanlocs(reref).labels}; end % this will prevent using the wrong channel in cases where we remove channels
+    
+    %% STEP 2.5: Label the task (OPTIONAL)
+    % insert the call to a labeling script below (script will need to be on your path)
+%    edit_event_markers_example() % an example of a labeling script from the appendix folder that can be called
     
     %% STEP 3: Adjust anti-aliasing and task related time offset
     if adjust_time_offset==1
