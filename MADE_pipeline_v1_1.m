@@ -306,11 +306,14 @@ for subject=1:length(datafile_names)
     EEG = eeg_checkset(EEG);
     
     % Edit this data import function and use appropriate plugin from EEGLAB
-    % for non-.mff data. For example, to import biosemi data, use biosig plugin.
+    % for EEGLAB formatted data, use the following line
+%     EEG = pop_loadset('filename',datafile_names{subject},'filepath',rawdata_location);
+    % for non-.mff raw data. For example, to import biosemi data, use biosig plugin.
     % The example codes for 64 channels biosemi data:
 %     EEG = pop_biosig([rawdata_location, filesep, datafile_names{subject}]);
 %     EEG = eeg_checkset(EEG);
 %     EEG = pop_select( EEG,'nochannel', 65:72); % delete redundant channels
+    
     
     %% STEP 1.5: Delete discontinuous data from the raw data file (OPTIONAL, but necessary for most EGI files)
     % Note: code below may need to be modified to select the appropriate markers (depends on the import function)
