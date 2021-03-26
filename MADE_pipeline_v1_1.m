@@ -323,7 +323,7 @@ for subject=1:length(datafile_names)
 %    disconMarkers = find(strcmp({EEG.event.type}, 'boundary')); % boundary markers often indicate discontinuity
 %    EEG = eeg_eegrej( EEG, [1 EEG.event(disconMarkers(1)).latency] ); % remove discontinuous chunk... if not EGI, MODIFY BEFORE USING THIS SECTION
 %    EEG = eeg_checkset( EEG );
-    % remove data after last trsp (OPTIONAL for EGI files... useful when file has noisy data at the end)
+%    % remove data after last trsp (OPTIONAL for EGI files... useful when file has noisy data at the end)
 %    trsp_flags = find(strcmp({EEG.event.type},'TRSP')); % find indices of TRSP flags
 %    EEG = eeg_eegrej( EEG, [(EEG.event(trsp_flags(end)).latency+(1.5*EEG.srate)) EEG.pnts] ); % remove everything 1.5 seconds after the last TRSP
 %    EEG = eeg_checkset( EEG );
