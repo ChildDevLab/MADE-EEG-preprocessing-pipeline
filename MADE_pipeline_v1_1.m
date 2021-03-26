@@ -286,7 +286,9 @@ end
 %% Initialize output variables
 reference_used_for_faster={}; % reference channel used for running faster to identify bad channel/s
 faster_bad_channels=[]; % number of bad channel/s identified by faster
+faster_bad_channels_labels=[]; % number of bad channel/s identified by faster
 ica_preparation_bad_channels={}; % number of bad channel/s due to channel/s exceeding xx% of artifacted epochs
+ica_preparation_bad_channels_labels={}; % number of bad channel/s due to channel/s exceeding xx% of artifacted epochs
 length_ica_data=[]; % length of data (in second) fed into ICA decomposition
 total_ICs=[]; % total independent components (ICs)
 ICs_removed=[]; % number of artifacted ICs
@@ -540,13 +542,17 @@ for subject=1:length(datafile_names)
 
         if numel(FASTbadChans)==0
             faster_bad_channels{subject}='0';
+            faster_bad_channels_labels{subject}='0';
         else
             faster_bad_channels{subject}=num2str(FASTbadChans');
+            faster_bad_channels_labels{subject}=strjoin({channels_analysed(FASTbadChans).labels});
         end
 
         if all_chan_bad_FAST==1
             faster_bad_channels{subject}='0';
+            faster_bad_channels_labels{subject}='0';
             ica_preparation_bad_channels{subject}='0';
+            ica_preparation_bad_channels_labels{subject}='0';
             length_ica_data(subject)=0;
             total_ICs(subject)=0;
             ICs_removed{subject}='0';
@@ -679,8 +685,10 @@ for subject=1:length(datafile_names)
 
         if numel(ica_prep_badChans)==0
             ica_preparation_bad_channels{subject}='0';
+            ica_preparation_bad_channels_labels{subject}='0';
         else
             ica_preparation_bad_channels{subject}=num2str(ica_prep_badChans);
+            ica_preparation_bad_channels_labels{subject}=strjoin({EEG.chanlocs(ica_prep_badChans).labels})
         end
 
         if all_bad_channels == 1
