@@ -688,7 +688,7 @@ for subject=1:length(datafile_names)
             ica_preparation_bad_channels_labels{subject}='0';
         else
             ica_preparation_bad_channels{subject}=num2str(ica_prep_badChans);
-            ica_preparation_bad_channels_labels{subject}=strjoin({EEG.chanlocs(ica_prep_badChans).labels})
+            ica_preparation_bad_channels_labels{subject}=strjoin({EEG.chanlocs(ica_prep_badChans).labels});
         end
 
         if all_bad_channels == 1
