@@ -679,6 +679,7 @@ for subject=1:length(datafile_names)
             end
         else
             % Reject bad channel - channel with more than xx% artifacted epochs
+            ica_preparation_bad_channels_labels{subject}=strjoin({EEG.chanlocs(ica_prep_badChans).labels});
             EEG_copy = pop_select( EEG_copy,'nochannel', ica_prep_badChans);
             EEG_copy = eeg_checkset(EEG_copy);
         end
@@ -688,7 +689,6 @@ for subject=1:length(datafile_names)
             ica_preparation_bad_channels_labels{subject}='0';
         else
             ica_preparation_bad_channels{subject}=num2str(ica_prep_badChans);
-            ica_preparation_bad_channels_labels{subject}=strjoin({EEG.chanlocs(ica_prep_badChans).labels});
         end
 
         if all_bad_channels == 1
