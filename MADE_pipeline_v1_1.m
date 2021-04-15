@@ -158,7 +158,7 @@ baseline_window = [xx  xx]; % baseline period in milliseconds (MS), [] = entire 
 
 % 11. Do you want to remove artifact laden epoch based on voltage threshold?
 voltthres_rejection = 0; % 0 = NO, 1 = YES
-volt_threshold = [xx xx]; % lower and upper threshold (in ?V)
+volt_threshold = [xx xx]; % lower and upper threshold (in mV)
 
 % 12. Do you want to perform epoch level channel interpolation for artifact laden epoch? (see manuscript for detail)
 % Note: interpolation is not recommended for systems with less than 20 channels
