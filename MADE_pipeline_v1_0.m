@@ -569,12 +569,16 @@ for subject=1:length(datafile_names)
     EEG_copy =eeg_regepochs(EEG_copy,'recurrence', 1, 'limits',[0 1], 'rmbase', [NaN], 'eventtype', '999'); % insert temporary marker 1 second apart and create epochs
     EEG_copy = eeg_checkset(EEG_copy);
     
-    if save_interim_result==1
-        badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
-    else
-        badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+    if size(EEG_copy.icaweights,1) == size(EEG_copy.icaweights,2)
+        if save_interim_result==1
+            badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'ica_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+        else
+            badICs = adjusted_ADJUST(EEG_copy, [[output_location filesep 'processed_data' filesep] strrep(datafile_names{subject}, ext, '_adjust_report')]);
+        end
+        close all;
+    else % if rank is less than the number of electrodes, throw a warning message
+        warning('The rank is less than the number of electrodes. ADJUST will be skipped. Artefacted ICs will have to be manually rejected for this participant');
     end
-    close all;
        
     % Mark the bad ICs found by ADJUST
     for ic=1:length(badICs)
