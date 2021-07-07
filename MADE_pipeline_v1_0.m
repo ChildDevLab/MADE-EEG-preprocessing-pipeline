@@ -52,6 +52,7 @@ clear % clear matlab workspace
 clc % clear matlab command window
 %addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'));% enter the path of the EEGLAB folder in this line
 %addpath(genpath('C:\Users\Berger\Documents\eeglab13_4_4b'))
+%eeglab % call eeglab to set up the plugin
 
 % 1. Enter the path of the folder that has the raw data to be analyzed
 rawdata_location = '....';
