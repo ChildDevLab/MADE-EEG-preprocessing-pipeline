@@ -6,9 +6,12 @@ Authors:
 Ranjan Debnath (ranjan.ju@gmail.com)
 George A. Buzzell (georgebuzzell@gmail.com)
 Santiago Morales  (moraless@umd.edu)
-Stephanie Leach (sleach12@umd.edu)
+Stephanie C. Leach (sleach12@umd.edu)
 Maureen E. Bowers (mbowers1@umd.edu)
 Nathan A. Fox (fox@umd.edu)
+
+Troubleshooting Help:
+Lydia Yoder (lyoder@umd.edu): Summer 2021 - Present
 
 See the MADE manuscript (https://doi.org/10.1111/psyp.13580) for detailed theoretical explanations of the processing steps. 
 A supplementary tutorial can be found under the Supporting Information tab at the bottom of the online manuscript.
