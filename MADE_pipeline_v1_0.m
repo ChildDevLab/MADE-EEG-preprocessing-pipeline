@@ -15,10 +15,11 @@
 % EEGLab:  https://sccn.ucsd.edu/eeglab/downloadtoolbox.php/download.php
 
 % You also need to download the following plugins/extensions from here: https://sccn.ucsd.edu/wiki/EEGLAB_Extensions
+
 % Specifically, download:
 % MFFMatlabIO: https://github.com/arnodelorme/mffmatlabio/blob/master/README.txt
 % FASTER: https://sourceforge.net/projects/faster/
-%  ADJUST:  https://www.nitrc.org/projects/adjust/ [Maybe we will replace this with our own GitHub link?]
+% Adjusted ADJUST:  https://github.com/ChildDevLab/MADE-EEG-preprocessing-pipeline
 
 % After downloading these plugins (as zip files), you need to place it in the eeglab/plugins folder.
 % For instance, for FASTER, you uncompress the downloaded extension file (e.g., 'FASTER.zip') and place it in the main EEGLAB "plugins" sub-directory/sub-folder.
@@ -65,10 +66,12 @@ channel_locations = ['path' filesep 'channel location file name.extension'];
 
 % 4. Do your data need correction for anti-aliasing filter and/or task related time offset?
 adjust_time_offset = 0; % 0 = NO (no correction), 1 = YES (correct time offset)
+
 % If your data need correction for time offset, initialize the offset time (in milliseconds)
-filter_timeoffset = xx;     % anti-aliasing time offset (in milliseconds). 0 = No time offset
-stimulus_timeoffset   = xx; % stimulus related time offset (in milliseconds). 0 = No time offset
-response_timeoffset = xx;    % response related time offset (in milliseconds). 0 = No time offset
+% YOU NEED TO CHANGE THE "xx" TO A REAL NUMBER WITHOUT QUOTATION MARKS!
+filter_timeoffset = "xx";     % anti-aliasing time offset (in milliseconds). 0 = No time offset
+stimulus_timeoffset   = "xx"; % stimulus related time offset (in milliseconds). 0 = No time offset
+response_timeoffset = "xx";    % response related time offset (in milliseconds). 0 = No time offset
 stimulus_markers = {'xxx', 'xxx'};      % enter the stimulus makers that need to be adjusted for time offset
 respose_markers = {'xxx', 'xxx'};       % enter the response makers that need to be adjusted for time offset
 
@@ -105,7 +108,7 @@ baseline_window = [xx  xx]; % baseline period in milliseconds (MS) [] = entire e
 
 % 11. Do you want to remove artifact laden epoch based on voltage threshold?
 voltthres_rejection = 0; % 0 = NO, 1 = YES
-volt_threshold = [xx xx]; % lower and upper threshold (in mV)
+volt_threshold = [xx xx]; % lower and upper threshold (in uV)
 
 % 12. Do you want to perform epoch level channel interpolation for artifact laden epoch? (see manuscript for detail)
 interp_epoch = 0; % 0 = NO, 1 = YES.
@@ -443,7 +446,7 @@ for subject=1:length(datafile_names)
     EEG_copy = eeg_checkset(EEG_copy);
     
     % Find bad epochs and delete them from dataset
-    vol_thrs = [-1000 1000]; % [lower upper] threshold limit(s) in mV.
+    vol_thrs = [-1000 1000]; % [lower upper] threshold limit(s) in uV.
     emg_thrs = [-100 30]; % [lower upper] threshold limit(s) in dB.
     emg_freqs_limit = [20 40]; % [lower upper] frequency limit(s) in Hz.
     
