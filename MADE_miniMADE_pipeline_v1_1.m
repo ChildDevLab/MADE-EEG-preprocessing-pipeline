@@ -158,7 +158,7 @@ baseline_window = [xx  xx]; % baseline period in milliseconds (MS), [] = entire 
 
 % 11. Do you want to remove artifact laden epoch based on voltage threshold?
 voltthres_rejection = 0; % 0 = NO, 1 = YES
-volt_threshold = [xx xx]; % lower and upper threshold (in mV)
+volt_threshold = [xx xx]; % lower and upper threshold (in uV)
 
 % 12. Do you want to perform epoch level channel interpolation for artifact laden epoch? (see manuscript for detail)
 % Note: interpolation is not recommended for systems with less than 20 channels
@@ -339,7 +339,7 @@ for subject=1:length(datafile_names)
         % save raw data in BIDS format
         EEG = eeg_checkset(EEG);
         EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg']);
-        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg'],'filepath', [output_location filesep current_subject filesep 'eeg']); % save BIDS format
+        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg.set'],'filepath', [output_location filesep current_subject filesep 'eeg']); % save BIDS format
         % save other variables in BIDS format
         cd([output_location filesep current_subject filesep 'eeg'])
         events_to_tsv(EEG); % save event info
@@ -572,8 +572,8 @@ for subject=1:length(datafile_names)
                 save([[output_location filesep 'filtered_data' filesep ] strrep(datafile_names{subject}, ext, '_filtered_data.mat')], 'EEG'); % save .mat format
             elseif output_format==3
                 EEG = eeg_checkset(EEG);
-                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_filtered_data']);
-                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_filtered_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
+                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01', '_desc-filtered_eeg']);
+                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01', '_desc-filtered_eeg.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
             end
         end
     
@@ -601,7 +601,7 @@ for subject=1:length(datafile_names)
         EEG_copy = eeg_checkset(EEG_copy);
 
         % Find bad epochs and delete them from dataset
-        vol_thrs = [-1000 1000]; % [lower upper] threshold limit(s) in mV.
+        vol_thrs = [-1000 1000]; % [lower upper] threshold limit(s) in uV.
         emg_thrs = [-100 30]; % [lower upper] threshold limit(s) in dB.
         emg_freqs_limit = [20 40]; % [lower upper] frequency limit(s) in Hz.
 
@@ -792,8 +792,8 @@ for subject=1:length(datafile_names)
                 save([[output_location filesep 'ica_data' filesep ] strrep(datafile_names{subject}, ext, '_ica_data.mat')], 'EEG'); % save .mat format
             elseif output_format==3
                 EEG = eeg_checkset(EEG);
-                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_ica_data']);
-                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_ica_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
+                EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01', '_desc-ica_eeg']);
+                EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01', '_desc-ica_eeg.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
             end
         end
     
@@ -1206,8 +1206,8 @@ for subject=1:length(datafile_names)
         save([[output_location filesep 'processed_data' filesep ] strrep(datafile_names{subject}, ext, '_processed_data.mat')], 'EEG'); % save .mat format
     elseif output_format==3
         EEG = eeg_checkset(EEG);
-        EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01_eeg', '_processed_data']);
-        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01_eeg', '_processed_data.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
+        EEG = pop_editset(EEG, 'setname',  [current_subject, '_task-', task_name, '_run-01', '_desc-processed_eeg']);
+        EEG = pop_saveset(EEG, 'filename', [current_subject, '_task-', task_name, '_run-01', '_desc-processed_eeg.set'],'filepath', [output_location_derivatives filesep 'eegpreprocess' filesep current_subject]); % save BIDS format
     end
     
     %% Create the report table for all the data files with relevant preprocessing outputs.
