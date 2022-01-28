@@ -57,7 +57,7 @@
 % Specifically, download:
 % MFFMatlabIO: https://github.com/arnodelorme/mffmatlabio/blob/master/README.txt
 % FASTER: https://sourceforge.net/projects/faster/
-% ADJUST: https://www.nitrc.org/projects/adjust/ OR Adjusted-ADJUST: included with this pipeline
+% ADJUST: https://www.nitrc.org/projects/adjust/ AND Adjusted-ADJUST: included with this pipeline
 
 % After downloading these plugins (as zip files), you need to place it in the eeglab/plugins folder.
 % For instance, for FASTER, you uncompress the downloaded extension file (e.g., 'FASTER.zip') and place it in the main EEGLAB "plugins" sub-directory/sub-folder.
