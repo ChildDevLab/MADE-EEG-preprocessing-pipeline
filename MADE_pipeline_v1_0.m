@@ -74,7 +74,7 @@ filter_timeoffset = "xx";     % anti-aliasing time offset (in milliseconds). 0 =
 stimulus_timeoffset   = "xx"; % stimulus related time offset (in milliseconds). 0 = No time offset
 response_timeoffset = "xx";    % response related time offset (in milliseconds). 0 = No time offset
 stimulus_markers = {'xxx', 'xxx'};      % enter the stimulus makers that need to be adjusted for time offset
-respose_markers = {'xxx', 'xxx'};       % enter the response makers that need to be adjusted for time offset
+response_markers = {'xxx', 'xxx'};       % enter the response makers that need to be adjusted for time offset
 
 % 5. Do you want to down sample the data?
 down_sample = 0; % 0 = NO (no down sampling), 1 = YES (down sampling)
