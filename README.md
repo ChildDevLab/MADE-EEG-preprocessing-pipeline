@@ -11,6 +11,7 @@ Maureen E. Bowers (mbowers1@umd.edu)
 Nathan A. Fox (fox@umd.edu)
 
 Troubleshooting Help:
+Please all post any questions to the "issues" page and I will respond as soon as possible. Thanks!
 Lydia Yoder (lyoder@umd.edu): Summer 2021 - Present
 
 See the MADE manuscript (https://doi.org/10.1111/psyp.13580) for detailed theoretical explanations of the processing steps. 
