@@ -28,7 +28,7 @@
 
 % addpath(genpath(('...')) % Enter the path of the EEGLAB folder in this line
 
-% Please cite the following references for in any manuscripts produced utilizing MADE pipeline:
+% Please cite the following references in any manuscripts produced utilizing MADE pipeline:
 
 % EEGLAB: A Delorme & S Makeig (2004) EEGLAB: an open source toolbox for
 % analysis of single-trial EEG dynamics. Journal of Neuroscience Methods, 134, 9?21.
